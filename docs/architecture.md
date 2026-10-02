@@ -4,5 +4,6 @@ Phase 0 establishes boundaries between audio representation, dataset/model backe
 
 Dataset and model factories reserve `local`, `kaggle`, and `huggingface` backends. Hugging Face loading deliberately raises a clear deferred-backend error in Phase 0. Paths prevent Kaggle outputs from being directed to `/kaggle/input`.
 
-Limitations: dummy components are integration scaffolding, not accuracy claims; no real ASR/VAD/OSD or routing is implemented.
+Phase 1 adds the separate clean-speech path `Audio → Chunker → WhisperRT Streaming Adapter → Transcript`. The adapter follows the upstream causal API: model reset starts an utterance, each chunk updates `SpectrogramStream` and calls `decode`, and finalization marks the latest rolling hypothesis final. VAD/OSD/routing remain out of this path.
 
+Limitations: Phase 0 dummy components are integration scaffolding, and a real Phase 1 run requires the optional upstream WhisperRT stack and external model/data access.

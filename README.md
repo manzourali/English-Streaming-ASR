@@ -59,7 +59,18 @@ The smoke test creates deterministic synthetic audio, chunks it, runs the stream
 
 Phase 0 — Infrastructure; Phase 1 — WhisperRT streaming baseline; Phase 2 — Streaming VAD; Phase 3 — Synthetic overlap generation; Phase 4 — Overlap benchmark; Phase 5 — OSD; Phase 6 — Adaptive routing; Phase 7 — Multi-talker/overlap-aware ASR; Phase 8 — Training/PEFT; Phase 9 — Evaluation/ablation; Phase 10 — Reproducibility/thesis experiments.
 
+## Phase 1 — WhisperRT Streaming Baseline
+
+Phase 1 adds the verified `whisper_rt` causal streaming adapter for `MLSpeech/WhisperRT-Streaming`. The adapter uses the upstream `StreamingWhisper.reset`, `SpectrogramStream`, and repeated `decode` calls, preserving model state across chunks. It does not use offline Whisper and has no fallback model. The clean-speech benchmark is configured for LibriSpeech `test-clean` through the Hugging Face `openslr/librispeech_asr` dataset (`clean`/`test` internally), with a configurable 300 ms chunk and batch size one.
+
+Install the optional Phase 1 stack according to the upstream WhisperRT project (PyTorch, `huggingface_hub`, the official `WhisperRT-Streaming` repository/package, and `datasets`), then run:
+
+```bash
+python3 scripts/run_streaming.py --config configs/whisperrt_baseline.yaml --max-samples 1
+```
+
+The run saves JSONL predictions, JSON metrics, a Markdown report, and the resolved configuration under `outputs/`. It requires model/data access and is intentionally separate from the lightweight Phase 0 smoke test. Phase 1 measures clean single-speaker speech only; it does not establish overlap robustness and does not implement VAD, OSD, routing, or multi-talker recognition.
+
 ## Research integrity
 
 Placeholders are explicitly labeled. Unmeasured values remain unmeasured, no benchmark result is fabricated, and research decisions are deferred until the relevant phase and evidence exist.
-

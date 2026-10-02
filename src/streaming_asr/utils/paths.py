@@ -18,6 +18,8 @@ class ProjectPaths:
     @classmethod
     def from_config(cls, config: object, root: str | Path | None = None) -> "ProjectPaths":
         environment = config.get("runtime.environment", "local")
+        if environment == "auto":
+            environment = "kaggle" if Path("/kaggle/input").exists() else "local"
         if environment not in {"local", "kaggle"}:
             raise ConfigurationError(f"Unsupported runtime environment: {environment}")
         project_root = Path(root or config.get("paths.root", Path.cwd())).resolve()
@@ -38,4 +40,3 @@ class ProjectPaths:
             path.mkdir(parents=True, exist_ok=True)
         for name in ("logs", "metrics", "predictions", "figures", "reports"):
             (self.outputs / name).mkdir(parents=True, exist_ok=True)
-

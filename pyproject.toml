@@ -13,6 +13,7 @@ dependencies = ["numpy>=1.23", "PyYAML>=6.0"]
 [project.optional-dependencies]
 dev = ["pytest>=7.0"]
 audio = ["soundfile>=0.12"]
+phase1 = ["datasets>=2.0", "huggingface_hub>=0.20", "soundfile>=0.12"]
 
 [tool.setuptools.packages.find]
 where = ["src"]

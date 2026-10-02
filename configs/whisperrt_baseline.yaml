@@ -1,7 +1,34 @@
 experiment:
-  name: phase1_whisperrt_baseline_placeholder
+  name: whisperrt_streaming_librispeech_baseline
+  seed: 42
+runtime:
+  environment: auto
+  device: auto
+data:
+  backend: huggingface
+  dataset: openslr/librispeech_asr
+  subset: clean
+  split: test-clean
+  max_samples: null
 model:
   backend: huggingface
   name: MLSpeech/WhisperRT-Streaming
-# Future phase placeholder: no model is loaded in Phase 0.
-
+  repo_id: MLSpeech/WhisperRT-Streaming
+  filename: small_300.pt
+  dtype: auto
+  language: en
+  beam_size: 5
+  temperature: 0.0
+audio:
+  sample_rate: 16000
+  channels: 1
+  chunk_ms: 300
+streaming:
+  enabled: true
+  batch_size: 1
+evaluation:
+  metrics: [wer, rtf, first_output_latency, end_of_utterance_latency]
+output:
+  save_predictions: true
+  save_metrics: true
+  save_report: true

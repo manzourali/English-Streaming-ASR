@@ -1,4 +1,3 @@
 # Experiments
 
-An experiment is defined by YAML, a seed, dataset/model identifiers, and an output root. Phase 0 run directories under `outputs/logs/` contain the resolved configuration, metadata, log, and smoke-test JSON. Future phases should add predictions, metrics, figures, and reports without committing generated artifacts. Reproduction requires the configuration, software versions, data path/version, model identifier, and hardware information.
-
+An experiment is defined by YAML, a seed, dataset/model identifiers, and an output root. Phase 1 times model loading separately from per-utterance streaming processing using `time.perf_counter()`. WER lowercases text, removes punctuation other than apostrophes, and collapses whitespace; raw and normalized reference/prediction text are saved. RTF is wall-clock processing time divided by audio duration, under the tested hardware/software/chunk configuration. Run directories contain resolved config, metadata, logs, JSONL predictions, JSON metrics, and a Markdown report. No value is populated unless measured.
