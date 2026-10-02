@@ -94,6 +94,16 @@ python3 scripts/generate_overlap.py --config configs/overlap_dataset.yaml --demo
 
 Configured LibriSpeech/Hugging Face or local/Kaggle generation uses the same dataset backend and must be run explicitly. Outputs are written under `outputs/synthetic_overlap/` and ignored by Git. Synthetic overlap provides controlled ground truth and is not a substitute for real conversational overlap datasets.
 
+## Phase 4 — WhisperRT Under Synthetic Overlap Baseline
+
+Phase 4 evaluates the existing single-stream WhisperRT pipeline directly on Phase 3 mixtures. It does not add OSD, separation, multi-talker decoding, overlap prompts, or optimization. For non-overlap controls, WER uses time-ordered concatenated source transcripts. For overlapping mixtures, source references and metadata are retained but ordinary WER is `NOT_MEASURED` because a single transcript stream has no justified speaker assignment.
+
+```bash
+python3 scripts/run_overlap_baseline.py --config configs/overlap_baseline.yaml --validate-only
+```
+
+The real benchmark requires the Phase 1 WhisperRT dependencies and model. Phase 4 artifacts are stored under `outputs/phase4/`.
+
 ## Research integrity
 
 Placeholders are explicitly labeled. Unmeasured values remain unmeasured, no benchmark result is fabricated, and research decisions are deferred until the relevant phase and evidence exist.

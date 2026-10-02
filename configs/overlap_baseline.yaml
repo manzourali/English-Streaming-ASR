@@ -1,0 +1,31 @@
+experiment:
+  name: phase4_whisperrt_synthetic_overlap_baseline
+  seed: 42
+runtime:
+  environment: auto
+  device: auto
+data:
+  manifest_root: outputs/synthetic_overlap
+  conditions: [train, validation, test]
+model:
+  backend: huggingface
+  name: MLSpeech/WhisperRT-Streaming
+  repo_id: MLSpeech/WhisperRT-Streaming
+  filename: small_300.pt
+  dtype: auto
+  language: en
+  beam_size: 5
+  temperature: 0.0
+audio:
+  sample_rate: 16000
+  chunk_ms: 300
+streaming:
+  enabled: true
+  batch_size: 1
+vad:
+  enabled: false
+evaluation:
+  overlap_wer: not_measured_single_stream
+  metrics: [wer_control, rtf, first_output_latency, end_of_utterance_latency, average_chunk_latency]
+output:
+  root: outputs/phase4

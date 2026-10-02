@@ -5,3 +5,5 @@ Phase 1 uses LibriSpeech `test-clean` as the clean single-speaker baseline. The 
 Phase 2 continues with clean LibriSpeech. Utterance-level LibriSpeech boundaries do not automatically provide frame-level speech/non-speech ground truth, so frame-level VAD precision/recall/F1 are not claimed without a valid reference annotation. The demo runner reports backend timing only unless scored reference labels are supplied.
 
 Phase 3 uses clean LibriSpeech sources, or tiny local fixtures for development, to create two-speaker mixtures. Splits are generated separately and speaker leakage is checked when speaker IDs are available. JSONL manifests preserve source paths, transcripts, speaker IDs, timing, overlap interval, overlap ratio, and relative gain. Synthetic mixtures are controlled data, not evidence of real conversational-overlap performance.
+
+Phase 4 consumes those JSONL manifests directly. Control mixtures may use a time-ordered concatenated reference for ordinary WER; overlapping mixtures retain both source references but do not receive ordinary single-reference WER.

@@ -24,6 +24,14 @@ def word_error_rate(reference: str, hypothesis: str) -> float:
     return _edit_distance(ref, hyp) / len(ref) if ref else (0.0 if not hyp else 1.0)
 
 
+def corpus_word_error_rate(references: list[str], hypotheses: list[str]) -> float:
+    if len(references) != len(hypotheses):
+        raise ValueError("references and hypotheses lengths must match")
+    ref = normalize_text(" ".join(references)).split()
+    hyp = normalize_text(" ".join(hypotheses)).split()
+    return _edit_distance(ref, hyp) / len(ref) if ref else (0.0 if not hyp else 1.0)
+
+
 def character_error_rate(reference: str, hypothesis: str) -> float:
     ref, hyp = list(normalize_text(reference)), list(normalize_text(hypothesis))
     return _edit_distance(ref, hyp) / len(ref) if ref else (0.0 if not hyp else 1.0)

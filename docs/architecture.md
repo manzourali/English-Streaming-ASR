@@ -10,4 +10,6 @@ Phase 2 adds `Audio → Streaming VAD → WhisperRT Streaming ASR → Transcript
 
 Phase 3 adds a separate data path: `LibriSpeech sources → deterministic selector → temporal scheduler → amplitude-safe mixer → JSONL manifest + WAV mixture`. Ground-truth overlap is calculated from source timing, not inferred from the mixed waveform. Generated audio can subsequently be passed to the existing streaming/VAD infrastructure.
 
+Phase 4 reuses the Phase 1 path unchanged: `mixture WAV → streaming chunks → WhisperRT → incremental transcript`. VAD is disabled in the primary overlap baseline; VAD-enabled runs must be separately labeled.
+
 Limitations: Phase 0 dummy components are integration scaffolding, and a real Phase 1 run requires the optional upstream WhisperRT stack and external model/data access.
