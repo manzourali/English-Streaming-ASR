@@ -71,6 +71,17 @@ python3 scripts/run_streaming.py --config configs/whisperrt_baseline.yaml --max-
 
 The run saves JSONL predictions, JSON metrics, a Markdown report, and the resolved configuration under `outputs/`. It requires model/data access and is intentionally separate from the lightweight Phase 0 smoke test. Phase 1 measures clean single-speaker speech only; it does not establish overlap robustness and does not implement VAD, OSD, routing, or multi-talker recognition.
 
+## Phase 2 — Streaming VAD
+
+Phase 2 adds a stateful WebRTC VAD backend. WebRTC VAD consumes 16 kHz mono PCM in fixed 10/20/30 ms frames; the project buffers those frames internally while accepting configurable ASR chunks. Its binary decision is exposed as speech/non-speech with a 0/1 decision score, not a calibrated probability. Install `webrtcvad-wheels` and run the explicit demo with:
+
+```bash
+python3 scripts/run_vad.py --config configs/streaming_vad.yaml
+python3 scripts/smoke_test.py --phase 2 --real-vad --config configs/streaming_vad.yaml
+```
+
+The selected integration design observes audio with VAD while forwarding the continuous audio stream to WhisperRT, preserving ASR context. This makes VAD overhead and decisions measurable without silently changing the Phase 1 input. Phase 2 does not perform overlap detection.
+
 ## Research integrity
 
 Placeholders are explicitly labeled. Unmeasured values remain unmeasured, no benchmark result is fabricated, and research decisions are deferred until the relevant phase and evidence exist.

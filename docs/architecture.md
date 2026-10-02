@@ -6,4 +6,6 @@ Dataset and model factories reserve `local`, `kaggle`, and `huggingface` backend
 
 Phase 1 adds the separate clean-speech path `Audio → Chunker → WhisperRT Streaming Adapter → Transcript`. The adapter follows the upstream causal API: model reset starts an utterance, each chunk updates `SpectrogramStream` and calls `decode`, and finalization marks the latest rolling hypothesis final. VAD/OSD/routing remain out of this path.
 
+Phase 2 adds `Audio → Streaming VAD → WhisperRT Streaming ASR → Transcript`. The selected WebRTC backend buffers fixed frames internally and emits speech/non-speech decisions. In the primary integration design, VAD observes the stream while continuous audio still reaches WhisperRT, preserving model context; VAD is not OSD and produces no speaker/overlap labels.
+
 Limitations: Phase 0 dummy components are integration scaffolding, and a real Phase 1 run requires the optional upstream WhisperRT stack and external model/data access.

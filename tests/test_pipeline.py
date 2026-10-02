@@ -10,3 +10,10 @@ def test_pipeline_propagates_state():
     state = pipeline.finalize()
     assert output.chunk_index == 0 and state.finalized
 
+
+def test_pipeline_can_run_vad_without_overlap_detector():
+    pipeline = StreamingASRPipeline(DummyVAD(), None)
+    pipeline.start()
+    output = pipeline.process(next(iter(AudioStream.from_array(np.ones(2), 2, 2))))
+    pipeline.finalize()
+    assert output.vad.speech and output.overlap is None

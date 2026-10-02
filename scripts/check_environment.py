@@ -19,7 +19,7 @@ def main() -> int:
     except Exception as exc:
         print(f"REQUIRED streaming_asr: NOT IMPORTABLE ({exc})")
         return 1
-    for package in ("numpy", "yaml", "pytest", "soundfile", "torch", "transformers"):
+    for package in ("numpy", "yaml", "pytest", "soundfile", "webrtcvad", "torch", "transformers"):
         status = "installed" if importlib.util.find_spec(package) else "not installed"
         label = "REQUIRED" if package in {"numpy", "yaml", "pytest"} else "OPTIONAL"
         print(f"{label} {package}: {status}")
@@ -35,4 +35,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

@@ -1,6 +1,33 @@
 experiment:
-  name: phase2_streaming_vad_placeholder
+  name: streaming_vad_librispeech
+  seed: 42
+runtime:
+  environment: auto
+  device: auto
+data:
+  backend: huggingface
+  dataset: openslr/librispeech_asr
+  subset: clean
+  split: test-clean
+  max_samples: null
+audio:
+  sample_rate: 16000
+  channels: 1
+  chunk_ms: 320
 vad:
   enabled: true
-  backend: deferred
-
+  backend: webrtc
+  frame_ms: 30
+  aggressiveness: 2
+  threshold: null
+asr:
+  enabled: false
+  model:
+    backend: huggingface
+    name: MLSpeech/WhisperRT-Streaming
+evaluation:
+  metrics: [vad_precision, vad_recall, vad_f1, vad_latency]
+output:
+  save_predictions: true
+  save_metrics: true
+  save_report: true
