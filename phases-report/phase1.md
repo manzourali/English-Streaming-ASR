@@ -1,66 +1,45 @@
-# Phase 1 Completion Report
-
-## 1. Implementation Summary
-
-Implemented the Phase 1 code path for the verified `whisper_rt` causal streaming API, while preserving Phase 0. The default Phase 0 smoke test remains model-free. No offline Whisper fallback, VAD, OSD, overlap, routing, or multi-talker functionality was added.
-
-## 2. Files Created/Modified
-
-- `src/streaming_asr/models/whisperrt.py`: WhisperRT backend, streaming adapter, transcript accumulator, device/dtype validation.
-- `src/streaming_asr/datasets/loaders.py`: Hugging Face LibriSpeech adapter and example iterator.
-- `src/streaming_asr/pipeline/baseline.py`: VAD-free Phase 1 baseline pipeline.
-- `src/streaming_asr/metrics/asr.py`, `metrics/benchmark.py`: text normalization and benchmark metrics.
-- `scripts/run_streaming.py`: configuration-driven benchmark runner and artifact writer.
-- `configs/whisperrt_baseline.yaml`, `notebooks/02_whisperrt_baseline.ipynb`.
-- Phase 1 documentation and `tests/test_whisperrt.py`.
-
-## 3. WhisperRT Integration
-
-The adapter follows the upstream implementation's `load_streaming_model`, `reset(use_stream=True)`, `SpectrogramStream.calc_mel_with_new_frame`, and repeated `decode` lifecycle. The model is created once and reset per utterance; decoder/encoder state is not recreated per chunk. The latest rolling hypothesis is retained and marked final during finalization.
-
-## 4. Dataset
-
-Configured dataset: LibriSpeech `test-clean`, through Hugging Face `openslr/librispeech_asr`, configuration `clean`, split `test`. Samples actually evaluated: **NOT MEASURED**. Total duration actually evaluated: **NOT MEASURED**.
-
-## 5. Experimental Configuration
-
-- Chunk size: 300 ms, configurable.
-- Sample rate: 16 kHz, mono.
-- Device: `auto` / CPU / CUDA.
-- Dtype: `auto`, `float32`, `float16`, or `bfloat16` validation.
-- Batch size: 1.
-- Generation: English, beam size 5, temperature 0.
-
-## 6. Measured Results
-
-| Metric | Value | Dataset subset | Hardware | Notes |
-| --- | --- | --- | --- | --- |
-| WER | NOT MEASURED | — | — | Real model/data run not available in this environment |
-| RTF | NOT MEASURED | — | — | — |
-| First-output latency | NOT MEASURED | — | — | — |
-| End-of-utterance latency | NOT MEASURED | — | — | — |
-| Avg. chunk latency | NOT MEASURED | — | — | — |
-
-## 7. Tests
-
-```text
-pytest: PASS (11 tests)
+1. Implementation Summary
+Implemented Phase 1 infrastructure for the verified WhisperRT causal streaming API while preserving Phase 0. No offline Whisper fallback, VAD, OSD, overlap, or multi-talker functionality was added.
+2. Files Created/Modified
+Key changes:
+- src/streaming_asr/models/whisperrt.py
+- src/streaming_asr/datasets/loaders.py
+- src/streaming_asr/pipeline/baseline.py
+- src/streaming_asr/metrics/benchmark.py
+- scripts/run_streaming.py
+- configs/whisperrt_baseline.yaml
+- notebooks/02_whisperrt_baseline.ipynb
+- tests/test_whisperrt.py
+- Phase 1 documentation and report
+3. WhisperRT Integration
+The adapter follows the upstream load_streaming_model, reset(use_stream=True), SpectrogramStream, and repeated decode lifecycle. Model state persists across chunks and resets per utterance. The verified API is documented in the official repository and streaming implementation.
+4. Dataset
+Configured: LibriSpeech test-clean via Hugging Face openslr/librispeech_asr, clean/test.
+Samples evaluated: NOT MEASURED
+Total duration: NOT MEASURED
+5. Experimental Configuration
+- Chunk size: 300 ms, configurable
+- Sample rate: 16 kHz
+- Device: auto/CPU/CUDA
+- Dtype validation: auto/float32/float16/bfloat16
+- Batch size: 1
+- Language: English
+- Beam size: 5
+6. Measured Results
+All real-model metrics are NOT MEASURED because the required WhisperRT stack and model/data were unavailable.
+7. Tests
+pytest: PASS — 11 tests
 Phase 0 smoke test: PASS
-WhisperRT integration: NOT RUN (PyTorch/upstream package/model unavailable)
-LibriSpeech development run: NOT RUN (dataset/model unavailable)
+WhisperRT integration: NOT RUN
+LibriSpeech development run: NOT RUN
 Full test-clean benchmark: NOT RUN
 Kaggle validation: NOT RUN
-```
-
-## 8. Problems Encountered
-
-The current environment has no PyTorch, WhisperRT package, Hugging Face datasets package, GPU, or attached/downloaded LibriSpeech data. The implementation therefore was validated through unit/configuration/smoke checks only.
-
-## 9. Limitations
-
-Clean single-speaker speech only; no overlap, VAD, OSD, adaptive routing, or multi-talker recognition. No measured Phase 1 benchmark result is claimed.
-
-## 10. Phase 2 Readiness
-
-The repository is structurally ready for Phase 2 — Streaming VAD, after a real WhisperRT/LibriSpeech development run is performed in an environment with the required optional dependencies and model/data access.
-
+Notebook validation: PASS
+The real-model command fails clearly when dependencies are absent:
+Phase 1 cannot start: WhisperRT requires torch, huggingface_hub, and the official WhisperRT package
+8. Problems Encountered
+PyTorch, the official WhisperRT package, Hugging Face datasets, GPU, and LibriSpeech data are unavailable in the current environment.
+9. Limitations
+Clean single-speaker speech only. No VAD, OSD, overlap processing, adaptive routing, or multi-talker recognition.
+10. Phase 2 Readiness
+The repository is structurally ready for Phase 2 after a real WhisperRT/LibriSpeech development run is completed in an environment with the required dependencies and model access.
