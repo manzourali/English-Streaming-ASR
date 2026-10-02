@@ -12,6 +12,8 @@ sys.path.insert(0, str(ROOT / "src"))
 from streaming_asr.audio.stream import AudioStream
 from streaming_asr.models.overlap_detector import DummyOverlapDetector
 from streaming_asr.models.vad import DummyVAD, get_vad_backend
+from streaming_asr.datasets.overlap_generator import OverlapGenerator, SourceUtterance
+from streaming_asr.datasets.validators import validate_overlap_records
 from streaming_asr.pipeline.streaming import StreamingASRPipeline
 from streaming_asr.utils.config import Config
 from streaming_asr.utils.logging import create_run
@@ -24,6 +26,7 @@ def main() -> int:
     parser.add_argument("--override")
     parser.add_argument("--phase", type=int, default=0)
     parser.add_argument("--real-vad", action="store_true")
+    parser.add_argument("--demo-overlap", action="store_true")
     args = parser.parse_args()
     config = Config.from_yaml(args.config, args.override)
     paths = ProjectPaths.from_config(config, ROOT)
@@ -52,7 +55,15 @@ def main() -> int:
         pipeline.process(chunk)
         count += 1
     state = pipeline.finalize()
-    result = {"phase": f"phase{args.phase}", "experiment": config.get("experiment.name"), "status": "success", "environment": config.get("runtime.environment"), "seed": config.get("experiment.seed"), "chunks": count, "finalized": state.finalized, "real_vad": bool(args.real_vad and args.phase == 2)}
+    overlap_ok = None
+    if args.phase == 3 and args.demo_overlap:
+        root = paths.outputs / "smoke_overlap"
+        source_a = SourceUtterance("a", "speaker_a", np.ones(sample_rate // 5, dtype=np.float32) * 0.1, sample_rate, "alpha", str(root / "a.wav"))
+        source_b = SourceUtterance("b", "speaker_b", np.ones(sample_rate // 5, dtype=np.float32) * 0.1, sample_rate, "bravo", str(root / "b.wav"))
+        generator = OverlapGenerator(root, sample_rate, 42)
+        record = generator.generate_pair(source_a, source_b, split="test", regime="medium", target_ratio=0.5)
+        overlap_ok = not validate_overlap_records([record], check_source_files=False)
+    result = {"phase": f"phase{args.phase}", "experiment": config.get("experiment.name"), "status": "success", "environment": config.get("runtime.environment"), "seed": config.get("experiment.seed"), "chunks": count, "finalized": state.finalized, "real_vad": bool(args.real_vad and args.phase == 2), "demo_overlap": overlap_ok}
     (run_dir / "smoke_test.json").write_text(json.dumps(result, indent=2), encoding="utf-8")
     logger.info("Smoke test completed: %s", result)
     print(json.dumps(result, indent=2))

@@ -8,4 +8,6 @@ Phase 1 adds the separate clean-speech path `Audio → Chunker → WhisperRT Str
 
 Phase 2 adds `Audio → Streaming VAD → WhisperRT Streaming ASR → Transcript`. The selected WebRTC backend buffers fixed frames internally and emits speech/non-speech decisions. In the primary integration design, VAD observes the stream while continuous audio still reaches WhisperRT, preserving model context; VAD is not OSD and produces no speaker/overlap labels.
 
+Phase 3 adds a separate data path: `LibriSpeech sources → deterministic selector → temporal scheduler → amplitude-safe mixer → JSONL manifest + WAV mixture`. Ground-truth overlap is calculated from source timing, not inferred from the mixed waveform. Generated audio can subsequently be passed to the existing streaming/VAD infrastructure.
+
 Limitations: Phase 0 dummy components are integration scaffolding, and a real Phase 1 run requires the optional upstream WhisperRT stack and external model/data access.

@@ -1,7 +1,36 @@
 experiment:
-  name: phase3_overlap_dataset_placeholder
+  name: synthetic_overlap
+  seed: 42
+runtime:
+  environment: auto
 data:
-  backend: local
-  dataset: synthetic_overlap
-# Future phase placeholder: generation is not implemented in Phase 0.
-
+  backend: huggingface
+  source_dataset: librispeech
+  dataset: openslr/librispeech_asr
+  subset: clean
+  source_splits:
+    train: train.100
+    validation: validation
+    test: test
+generation:
+  num_samples: 4
+  max_source_samples: 20
+  num_speakers: 2
+  normalize_rms: true
+audio:
+  sample_rate: 16000
+overlap:
+  ratio_definition: overlap_duration_over_shorter_source_duration
+  regimes:
+    low:
+      target_ratio: 0.25
+    medium:
+      target_ratio: 0.50
+    high:
+      target_ratio: 0.80
+    control:
+      target_ratio: 0.0
+mix:
+  relative_gain_db: [0.0, -3.0]
+output:
+  root: outputs/synthetic_overlap

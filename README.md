@@ -82,6 +82,18 @@ python3 scripts/smoke_test.py --phase 2 --real-vad --config configs/streaming_va
 
 The selected integration design observes audio with VAD while forwarding the continuous audio stream to WhisperRT, preserving ASR context. This makes VAD overhead and decisions measurable without silently changing the Phase 1 input. Phase 2 does not perform overlap detection.
 
+## Phase 3 — Synthetic Overlap Dataset Generation
+
+Phase 3 generates deterministic two-speaker mixtures from clean source utterances. Each JSONL record stores source IDs, speaker IDs, transcripts, source timing, overlap interval, overlap duration/ratio, relative gain, split, and mixture audio path. The overlap ratio is `overlap_duration / shorter_source_duration`; source RMS normalization is applied before relative gain, followed by common peak headroom scaling.
+
+Run the small no-download development dataset with:
+
+```bash
+python3 scripts/generate_overlap.py --config configs/overlap_dataset.yaml --demo
+```
+
+Configured LibriSpeech/Hugging Face or local/Kaggle generation uses the same dataset backend and must be run explicitly. Outputs are written under `outputs/synthetic_overlap/` and ignored by Git. Synthetic overlap provides controlled ground truth and is not a substitute for real conversational overlap datasets.
+
 ## Research integrity
 
 Placeholders are explicitly labeled. Unmeasured values remain unmeasured, no benchmark result is fabricated, and research decisions are deferred until the relevant phase and evidence exist.
