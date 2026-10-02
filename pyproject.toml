@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "english-streaming-asr-overlap"
+version = "0.1.0"
+description = "Phase-by-phase research foundation for English streaming ASR with overlapped speech."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = ["numpy>=1.23", "PyYAML>=6.0"]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.0"]
+audio = ["soundfile>=0.12"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]

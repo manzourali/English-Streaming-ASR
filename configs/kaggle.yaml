@@ -1,0 +1,10 @@
+runtime:
+  environment: kaggle
+data:
+  backend: kaggle
+  path: /kaggle/input
+paths:
+  data: /kaggle/input
+  outputs: /kaggle/working/outputs
+  checkpoints: /kaggle/working/checkpoints
+

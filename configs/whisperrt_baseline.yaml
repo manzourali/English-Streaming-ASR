@@ -1,0 +1,7 @@
+experiment:
+  name: phase1_whisperrt_baseline_placeholder
+model:
+  backend: huggingface
+  name: MLSpeech/WhisperRT-Streaming
+# Future phase placeholder: no model is loaded in Phase 0.
+

@@ -1,0 +1,7 @@
+experiment:
+  name: phase3_overlap_dataset_placeholder
+data:
+  backend: local
+  dataset: synthetic_overlap
+# Future phase placeholder: generation is not implemented in Phase 0.
+

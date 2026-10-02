@@ -1,0 +1,23 @@
+experiment:
+  name: phase0_infrastructure
+  seed: 42
+runtime:
+  environment: local
+data:
+  backend: local
+  path: data
+model:
+  backend: huggingface
+  name: MLSpeech/WhisperRT-Streaming
+audio:
+  sample_rate: 16000
+  chunk_ms: 320
+streaming:
+  enabled: true
+logging:
+  level: INFO
+paths:
+  data: data
+  outputs: outputs
+  checkpoints: checkpoints
+

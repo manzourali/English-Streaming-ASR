@@ -1,0 +1,6 @@
+experiment:
+  name: phase2_streaming_vad_placeholder
+vad:
+  enabled: true
+  backend: deferred
+
