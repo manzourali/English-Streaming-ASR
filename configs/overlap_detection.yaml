@@ -1,6 +1,21 @@
 experiment:
-  name: phase5_overlap_detection_placeholder
-overlap_detection:
+  name: phase5_streaming_osd
+  seed: 42
+runtime:
+  environment: auto
+data:
+  manifest_root: outputs/synthetic_overlap
+  splits: [test]
+audio:
+  sample_rate: 16000
+osd:
   enabled: true
-  backend: deferred
-
+  backend: heuristic
+  frame_ms: 30
+  speech_threshold: 0.0001
+  peak_threshold: 0.35
+  min_peak_distance_hz: 80.0
+evaluation:
+  metrics: [overlap_precision, overlap_recall, overlap_f1, detection_latency, osd_rtf]
+output:
+  root: outputs/phase5

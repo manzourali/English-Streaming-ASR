@@ -26,9 +26,10 @@ from streaming_asr.utils.reproducibility import set_seed
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", default="configs/streaming_vad.yaml")
+    parser.add_argument("--override", help="Optional YAML override")
     parser.add_argument("--input", help="Optional mono WAV file; without it, runs an unscored synthetic demo")
     args = parser.parse_args()
-    config = Config.from_yaml(args.config)
+    config = Config.from_yaml(args.config, args.override)
     paths = ProjectPaths.from_config(config, ROOT)
     paths.ensure_output_dirs()
     set_seed(int(config.get("experiment.seed", 42)))

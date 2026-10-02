@@ -1,0 +1,12 @@
+runtime:
+  environment: kaggle
+paths:
+  data: /kaggle/input
+  outputs: /kaggle/working/outputs
+  checkpoints: /kaggle/working/checkpoints
+# Used by Phase 3, whose generator reads output.root directly.
+output:
+  root: /kaggle/working/outputs/synthetic_overlap
+# Used by Phases 4 and 5, whose evaluators read manifest_root directly.
+data:
+  manifest_root: /kaggle/working/outputs/synthetic_overlap

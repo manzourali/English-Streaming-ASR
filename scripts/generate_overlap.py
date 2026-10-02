@@ -48,9 +48,10 @@ def _source_from_example(example, root: Path, sample_rate: int) -> SourceUtteran
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", default="configs/overlap_dataset.yaml")
+    parser.add_argument("--override", help="Optional YAML override, useful for Kaggle output paths")
     parser.add_argument("--demo", action="store_true", help="Use tiny deterministic fixture sources; no download")
     args = parser.parse_args()
-    config = Config.from_yaml(args.config)
+    config = Config.from_yaml(args.config, args.override)
     paths = ProjectPaths.from_config(config, ROOT)
     paths.ensure_output_dirs()
     seed = int(config.get("experiment.seed", 42))

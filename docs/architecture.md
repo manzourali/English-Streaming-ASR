@@ -13,3 +13,5 @@ Phase 3 adds a separate data path: `LibriSpeech sources → deterministic select
 Phase 4 reuses the Phase 1 path unchanged: `mixture WAV → streaming chunks → WhisperRT → incremental transcript`. VAD is disabled in the primary overlap baseline; VAD-enabled runs must be separately labeled.
 
 Limitations: Phase 0 dummy components are integration scaffolding, and a real Phase 1 run requires the optional upstream WhisperRT stack and external model/data access.
+
+Phase 5 adds a parallel observation path: `Audio → Streaming OSD → overlap state`. OSD consumes the same timestamped chunks independently of WhisperRT and VAD and emits `NO_SPEECH`, `SINGLE_SPEAKER`, or `OVERLAP`. The selected baseline is causal spectral complexity; no OSD output is routed into ASR in Phase 5, so adaptive routing remains a Phase 6 concern.

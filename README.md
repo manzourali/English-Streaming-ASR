@@ -1,7 +1,8 @@
 # English Streaming ASR with Overlapped Speech
 
-Current phase: **Phase 0 — Infrastructure**  
-Status: **Infrastructure implementation**
+Current phase: **Phase 5 — Streaming Overlap Speech Detection**
+
+Status: **Phases 0–5 implemented; real WhisperRT/LibriSpeech benchmarks remain to be run**
 
 This repository is a reproducible, phase-by-phase foundation for research on English automatic speech recognition over continuous audio streams with overlapped voices. The long-term system will combine streaming VAD, overlap speech detection, WhisperRT streaming ASR, adaptive routing, and later overlap-aware/multi-talker recognition. Phase 0 intentionally does not implement real inference, training, dataset downloads, or benchmark results.
 
@@ -26,6 +27,19 @@ In Phase 0, audio chunks, state transitions, configuration, backend interfaces, 
 - `docs/`: architecture, dataset, experiment, and thesis mapping notes.
 - `data/`, `checkpoints/`, `outputs/`: runtime locations; generated data and weights are not committed.
 
+## Current status by phase
+
+| Phase | What is implemented | What is actually measured |
+| --- | --- | --- |
+| 0 | Project structure, configs, streaming contracts, smoke tests | Infrastructure smoke tests pass |
+| 1 | WhisperRT causal streaming adapter and clean-speech runner | Real WER/RTF/latency: **NOT MEASURED**; required model stack was unavailable |
+| 2 | Streaming WebRTC VAD with fixed-frame buffering | Synthetic integration timing only; VAD accuracy: **NOT MEASURED** |
+| 3 | Deterministic two-speaker overlap generator, manifests, validation | 12 local demo mixtures generated and validated; real LibriSpeech generation not run |
+| 4 | Single-stream WhisperRT overlap baseline and honest WER policy | Manifest validation passed; real WhisperRT overlap results: **NOT MEASURED** |
+| 5 | Independent causal heuristic OSD, timing alignment, metrics, evaluator | Demo: precision 1.000, recall 0.636, F1 0.778, 15 ms mean delay, 0.00274 RTF |
+
+The main research gap is therefore the real WhisperRT/LibriSpeech execution. Phases 1 and 4 are implemented, but their model/data benchmarks still need to run in an environment with PyTorch, the verified WhisperRT package, model weights, and dataset access. Phase 5 is a transparent spectral baseline, not a pretrained neural OSD result. See [`docs/phase_reports/`](docs/phase_reports/) for the evidence and limitations of every phase.
+
 ## Installation
 
 Python 3.9+ is supported; Python 3.10 is the documented Conda target. From the repository root:
@@ -36,13 +50,73 @@ source .venv/bin/activate
 python -m pip install -r requirements.txt
 ```
 
-The Phase 0 stack is deliberately lightweight. PyTorch, Transformers, datasets, and WhisperRT dependencies are deferred to later phases.
+The base installation is deliberately lightweight. PyTorch, Hugging Face `datasets`, and the official WhisperRT dependency stack are optional because the repository can run its infrastructure, VAD, synthetic-data, and heuristic OSD checks without them.
 
 ## Configuration and Kaggle
 
 All runs use YAML. Nested values are available through dotted keys and a second YAML file can be merged with `--override`. Local outputs use `data/`, `outputs/`, and `checkpoints/`. In Kaggle, `/kaggle/input` is treated as read-only and generated artifacts go to `/kaggle/working/`.
 
-Kaggle Internet ON may be used by later phases for Hugging Face access. Internet OFF is supported when models/datasets are attached as Kaggle inputs. Phase 0 needs neither internet nor attached data.
+Kaggle Internet ON may be used by later phases for Hugging Face access. Internet OFF is supported when prepared data/model artifacts are attached as Kaggle inputs. The generic [`configs/kaggle.yaml`](configs/kaggle.yaml) is intended for infrastructure/path checks; for phase experiments use [`configs/kaggle_paths.yaml`](configs/kaggle_paths.yaml), which preserves Hugging Face loading while moving generated artifacts and manifests to `/kaggle/working/`.
+
+### Kaggle setup
+
+1. Create a Kaggle Notebook with Internet enabled if you need Hugging Face or WhisperRT downloads, select a GPU accelerator for WhisperRT, and add this repository as a Kaggle Dataset or clone it into `/kaggle/working/English-Streaming-ASR`.
+2. In the first cell, install the base and optional dependencies:
+
+   ```bash
+   %cd /kaggle/working/English-Streaming-ASR
+   !pip install -q -r requirements.txt webrtcvad-wheels datasets huggingface_hub
+   !python scripts/check_environment.py
+   ```
+
+3. Run the model-free regression checks first:
+
+   ```bash
+   !python -m pytest -q
+   !python scripts/smoke_test.py --config configs/kaggle.yaml
+   ```
+
+4. Run Phase 2 VAD on the synthetic demo:
+
+   ```bash
+   !python scripts/run_vad.py --config configs/streaming_vad.yaml --override configs/kaggle_paths.yaml
+   !python scripts/smoke_test.py --phase 2 --real-vad --config configs/streaming_vad.yaml
+   ```
+
+5. Generate the deterministic Phase 3 development set and evaluate Phase 5 OSD:
+
+   ```bash
+   !python scripts/generate_overlap.py --config configs/overlap_dataset.yaml --override configs/kaggle_paths.yaml --demo
+   !python scripts/evaluate_osd.py --config configs/overlap_detection.yaml --override configs/kaggle_paths.yaml
+   !python scripts/smoke_test.py --phase 5 --validate-osd --config configs/overlap_detection.yaml --override configs/kaggle_paths.yaml
+   ```
+
+   The generated WAV files, manifests, metrics, and reports will be under `/kaggle/working/outputs/` and can be saved as Kaggle Notebook outputs or published as a new Dataset version.
+
+6. Run Phase 1 clean-speech WhisperRT with a small sample count before attempting a full benchmark. The exact upstream WhisperRT package and model-loading dependencies must be installed according to the verified WhisperRT project used by this adapter:
+
+   ```bash
+   !python scripts/run_streaming.py --config configs/whisperrt_baseline.yaml --override configs/kaggle_paths.yaml --max-samples 1
+   ```
+
+   If the upstream package/model is not installed or cannot be downloaded, the command should stop with a dependency error; do not substitute offline Whisper and do not report fabricated WER.
+
+7. After Phase 3 data and a successful Phase 1 model smoke run, validate Phase 4 without inference, then run the real baseline:
+
+   ```bash
+   !python scripts/run_overlap_baseline.py --config configs/overlap_baseline.yaml --override configs/kaggle_paths.yaml --validate-only
+   !python scripts/run_overlap_baseline.py --config configs/overlap_baseline.yaml --override configs/kaggle_paths.yaml --max-samples 1
+   ```
+
+   For a full experiment, remove `--max-samples` only after the one-sample run succeeds. Phase 4 intentionally marks ordinary WER for overlapping mixtures as `NOT_MEASURED` because one transcript stream has no justified speaker assignment.
+
+#### Kaggle data modes
+
+- **Internet ON / Hugging Face mode:** use the commands above. Keep the phase config's `data.backend: huggingface`; `kaggle_paths.yaml` only changes paths.
+- **Attached-input mode:** attach prepared WAV/manifests/model files under `/kaggle/input` and create a project-specific override with the exact input paths. The current `KaggleDatasetBackend` expects a prepared local manifest layout; it does not automatically discover arbitrary Kaggle Dataset folder names.
+- **Model artifacts:** model files and the official WhisperRT package are not bundled in this repository. Attach or download them according to the upstream project, verify the model filename/configuration, and record the resolved config and hardware in the generated report.
+
+All generated outputs should remain in `/kaggle/working`; `/kaggle/input` is read-only. Before claiming a benchmark, save the JSON metrics, JSONL predictions/manifests, resolved configuration, logs, and Markdown report from `/kaggle/working/outputs/`.
 
 ## Validation
 
@@ -107,3 +181,17 @@ The real benchmark requires the Phase 1 WhisperRT dependencies and model. Phase 
 ## Research integrity
 
 Placeholders are explicitly labeled. Unmeasured values remain unmeasured, no benchmark result is fabricated, and research decisions are deferred until the relevant phase and evidence exist.
+
+## Phase 5 — Streaming Overlap Speech Detection
+
+Phase 5 adds an independent streaming OSD interface with `NO_SPEECH`, `SINGLE_SPEAKER`, and `OVERLAP` states. The selected candidate is a causal, dependency-free spectral-peak heuristic (`heuristic` backend); it is an algorithmic baseline, not a pretrained neural model. It runs incrementally on fixed audio frames and does not modify WhisperRT, VAD, routing, diarization, or source separation.
+
+Run the reproducible development evaluation after generating the Phase 3 demo data:
+
+```bash
+python3 scripts/generate_overlap.py --config configs/overlap_dataset.yaml --demo
+python3 scripts/evaluate_osd.py --config configs/overlap_detection.yaml
+python3 scripts/smoke_test.py --phase 5 --validate-osd --config configs/overlap_detection.yaml
+```
+
+Metrics are scored against source-timing ground truth, with explicit midpoint alignment for frame-size differences. Reports include overlap precision/recall/F1, a three-class confusion matrix, event detection delay when measurable, and OSD RTF. Synthetic mixtures are controlled development data and do not establish real conversational-overlap performance.

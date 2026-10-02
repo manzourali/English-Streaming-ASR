@@ -46,10 +46,11 @@ def _load_records(config: Config, max_samples: int | None) -> list:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", default="configs/overlap_baseline.yaml")
+    parser.add_argument("--override", help="Optional YAML override, useful for Kaggle paths")
     parser.add_argument("--max-samples", type=int)
     parser.add_argument("--validate-only", action="store_true", help="Validate manifests and write NOT_MEASURED summary without loading WhisperRT")
     args = parser.parse_args()
-    config = Config.from_yaml(args.config)
+    config = Config.from_yaml(args.config, args.override)
     paths = ProjectPaths.from_config(config, ROOT)
     paths.ensure_output_dirs()
     set_seed(int(config.get("experiment.seed", 42)))
