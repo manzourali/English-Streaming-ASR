@@ -4,6 +4,8 @@ from streaming_asr.audio.stream import AudioStream
 from streaming_asr.models.overlap_detector import OracleOverlapDetector
 from streaming_asr.models.vad import DummyVAD
 from streaming_asr.pipeline.adaptive import ASRBranch, AdaptiveStreamingASRPipeline, Route, RoutingPolicy, RoutingState
+from streaming_asr.models.multitalker import SURT2WindowedASR
+from streaming_asr.pipeline.overlap import MultiTalkerASRBranch
 
 
 class RecordingBranch(ASRBranch):
@@ -102,3 +104,11 @@ def test_osd_failure_has_deterministic_normal_fallback():
     pipeline = AdaptiveStreamingASRPipeline(branch, vad=DummyVAD(threshold=0.01), overlap_detector=BrokenOSD(), policy=RoutingPolicy())
     output = pipeline.process(chunks([1])[0])
     assert output.route is Route.NORMAL and output.controller_error == "osd:RuntimeError"
+
+
+def test_adaptive_router_can_activate_structured_multitalker_branch():
+    normal = RecordingBranch()
+    overlap = MultiTalkerASRBranch(SURT2WindowedASR(lambda samples, rate: ["one", "two"], sample_rate=10, chunk_duration_ms=100))
+    pipeline = AdaptiveStreamingASRPipeline(normal, overlap, vad=DummyVAD(threshold=0.01), oracle_detector=OracleOverlapDetector([(0.0, 0.2), (0.0, 0.2)]), oracle=True, policy=RoutingPolicy())
+    output = pipeline.process(chunks([1])[0])
+    assert output.route is Route.OVERLAP and len(output.branch_output.streams) == 2

@@ -19,7 +19,9 @@ from streaming_asr.metrics.streaming import real_time_factor
 from streaming_asr.models.overlap_detector import OracleOverlapDetector, get_overlap_detector, OverlapLabel
 from streaming_asr.models.vad import get_vad_backend
 from streaming_asr.models.whisperrt import WhisperRTStreamingASR
+from streaming_asr.models.multitalker import SURT2WindowedASR
 from streaming_asr.pipeline.adaptive import AdaptiveStreamingASRPipeline, AlwaysNormalRoutingPolicy, RoutingPolicy
+from streaming_asr.pipeline.overlap import MultiTalkerASRBranch
 from streaming_asr.utils.config import Config
 from streaming_asr.utils.logging import create_run
 from streaming_asr.utils.paths import ProjectPaths
@@ -53,6 +55,9 @@ def _run_mode(values: dict, records: list[OverlapRecord], mode: str) -> dict[str
     # Loading is intentionally excluded from audio-processing RTF, matching
     # the Phase 1 benchmark definition. ``start`` resets it per recording.
     asr = WhisperRTStreamingASR.from_config(model_config)
+    overlap_branch = None
+    if mode != "always_normal" and values.get("branches", {}).get("overlap") == "surt2":
+        overlap_branch = MultiTalkerASRBranch(SURT2WindowedASR.from_config(values["multitalker"]))
     wall_started = time.perf_counter()
     for record in records:
         samples, metadata = load_audio(record.audio_path)
@@ -61,7 +66,8 @@ def _run_mode(values: dict, records: list[OverlapRecord], mode: str) -> dict[str
         vad = get_vad_backend(values["vad"]["backend"], {**values["vad"], "sample_rate": sample_rate}) if values["vad"].get("enabled", True) else None
         predicted = get_overlap_detector(values["osd"]["backend"], {**values["osd"], "sample_rate": sample_rate}) if values["osd"].get("enabled", True) else None
         oracle = OracleOverlapDetector([(source.start, source.end) for source in record.sources])
-        pipeline = AdaptiveStreamingASRPipeline(asr, vad=vad, overlap_detector=predicted, oracle_detector=oracle, oracle=mode == "oracle", policy=_policy(values, mode), history_ms=float(values["routing"].get("history_ms", 0)), fallback_route=values["routing"].get("fallback_route", "normal"))
+        history_ms = values["routing"].get("overlap_pre_roll_ms", values["routing"].get("history_ms", 0)) if overlap_branch is not None else values["routing"].get("history_ms", 0)
+        pipeline = AdaptiveStreamingASRPipeline(asr, overlap_branch, vad=vad, overlap_detector=predicted, oracle_detector=oracle, oracle=mode == "oracle", policy=_policy(values, mode), history_ms=float(history_ms), fallback_route=values["routing"].get("fallback_route", "normal"))
         pipeline.start()
         for chunk in AudioStream.from_array(samples, sample_rate, chunk_samples):
             output = pipeline.process(chunk)

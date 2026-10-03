@@ -49,12 +49,26 @@ routing:
   # For the shared Phase 6 control branch, retain WhisperRT context in silence.
   idle_behavior: forward_normal
   history_ms: 0
+  # When branches.overlap=surt2, this bounded history becomes overlap pre-roll.
+  overlap_pre_roll_ms: 640
   fallback_route: normal
 
 branches:
   # Phase 6 control: both logical routes share one WhisperRT instance. This is
   # not a multi-talker recognizer and measures routing overhead only.
   overlap: shared_normal
+
+# Change branches.overlap to `surt2` and supply decoder_factory in an override
+# to activate Phase 7's selected external SURT 2.0-compatible branch.
+multitalker:
+  name: SURT-2.0
+  decoder_factory: null
+  sample_rate: 16000
+  streaming:
+    chunk_duration_ms: 320
+    context_duration_ms: 1280
+    lookahead_ms: 0
+    hop_duration_ms: 320
 
 evaluation:
   metrics:

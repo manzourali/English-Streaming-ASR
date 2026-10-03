@@ -1,8 +1,8 @@
 # English Streaming ASR with Overlapped Speech
 
-Current phase: **Phase 6 — Adaptive Streaming ASR Routing**
+Current phase: **Phase 7 — Overlap-Aware / Multi-Talker ASR**
 
-Status: **Phases 0–6 implemented; real WhisperRT/LibriSpeech benchmarks remain to be run**
+Status: **Phases 0–7 implemented; real WhisperRT/SURT benchmarks remain to be run**
 
 This repository is a reproducible, phase-by-phase foundation for research on English automatic speech recognition over continuous audio streams with overlapped voices. The long-term system will combine streaming VAD, overlap speech detection, WhisperRT streaming ASR, adaptive routing, and later overlap-aware/multi-talker recognition. Phase 0 intentionally does not implement real inference, training, dataset downloads, or benchmark results.
 
@@ -38,6 +38,7 @@ In Phase 0, audio chunks, state transitions, configuration, backend interfaces, 
 | 4 | Single-stream WhisperRT overlap baseline and honest WER policy | Manifest validation passed; real WhisperRT overlap results: **NOT MEASURED** |
 | 5 | Independent causal heuristic OSD, timing alignment, metrics, evaluator | Demo: precision 1.000, recall 0.636, F1 0.778, 15 ms mean delay, 0.00274 RTF |
 | 6 | Incremental VAD/OSD controller, configurable routing state machine, branch contract, oracle/predicted controls | **NOT MEASURED**: Phase 3 manifest plus WhisperRT runtime/model are required |
+| 7 | SURT 2.0-compatible structured overlap branch, low-latency window adapter, PI-WER metric, adaptive integration | **NOT MEASURED**: verified external SURT decoder/checkpoint, Phase 3 manifest, and compute are required |
 
 The main research gap is therefore the real WhisperRT/LibriSpeech execution. Phases 1 and 4 are implemented, but their model/data benchmarks still need to run in an environment with PyTorch, the verified WhisperRT package, model weights, and dataset access. Phase 5 is a transparent spectral baseline, not a pretrained neural OSD result. See [`docs/phase_reports/`](docs/phase_reports/) for the evidence and limitations of every phase.
 
@@ -220,3 +221,18 @@ python3 scripts/run_adaptive.py --config configs/adaptive.yaml --max-samples 1
 ```
 
 The runner saves routing JSONL traces, transition events, per-mode metrics/reports, route duration, routing precision/recall/F1, detection-to-routing delay, and end-to-end RTF. No Phase 6 benchmark values are claimed in this repository because the required manifest and WhisperRT runtime/model were not present during implementation.
+
+## Phase 7 — Overlap-aware / multi-talker ASR
+
+Phase 7 selects the SURT 2.0 model family after documenting alternatives in [the candidate review](docs/multitalker_candidates.md). SURT 2.0 is designed for continuous multi-talker ASR, but this repository deliberately does not guess or vendor its external runtime API. [`SURT2WindowedASR`](src/streaming_asr/models/multitalker.py) accepts a versioned external `decoder_factory` and emits structured, unordered recognition channels—not speaker identities—with timestamps, optional confidence, rolling text, newly emitted text, and partial/final state.
+
+The published SURT family is a true-streaming architecture. Until a selected external decoder exposes and verifies native causal state through this adapter, the project execution mode is explicitly **LOW-LATENCY WINDOWED INFERENCE**, not true streaming. It never falls back to ordinary WhisperRT when SURT is unavailable.
+
+Configure a Phase 3 manifest plus a verified factory/checkpoint in an override, then run:
+
+```bash
+python3 scripts/run_multitalker.py --config configs/multitalker.yaml --validate-only
+python3 scripts/run_multitalker.py --config configs/multitalker.yaml --max-samples 1
+```
+
+Set `branches.overlap: surt2` in an adaptive override to route Phase 6 overlap events to the structured SURT branch; `overlap_pre_roll_ms` is represented by the existing adaptive history setting. Multi-talker output is evaluated with permutation-invariant WER across output channels, never with speaker-attributed WER. No Phase 7 ASR, latency, memory, or routing result has been measured in this checkout.

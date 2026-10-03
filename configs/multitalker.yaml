@@ -1,5 +1,39 @@
 experiment:
-  name: phase7_multitalker_placeholder
-multitalker:
-  enabled: false
+  name: phase7_surt2_low_latency_windowed
+  seed: 42
 
+runtime:
+  environment: auto
+  device: auto
+
+data:
+  manifest: data/manifests/test.jsonl
+  max_samples: null
+
+audio:
+  sample_rate: 16000
+
+# SURT 2.0 has a public recipe/model release, but its Python inference API is
+# not vendored here. Supply a verified factory through an override; it must
+# return callable(samples: np.ndarray, sample_rate: int) -> streams.
+model:
+  backend: external_recipe
+  name: SURT-2.0
+  checkpoint: null
+  decoder_factory: null
+  sample_rate: 16000
+  streaming:
+    chunk_duration_ms: 320
+    context_duration_ms: 1280
+    lookahead_ms: 0
+    hop_duration_ms: 320
+
+overlap:
+  pre_roll_ms: 640
+
+evaluation:
+  metrics:
+    - permutation_invariant_wer
+    - rtf
+    - first_output_latency
+    - end_of_utterance_latency
