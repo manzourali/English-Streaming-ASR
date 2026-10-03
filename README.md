@@ -1,8 +1,8 @@
 # English Streaming ASR with Overlapped Speech
 
-Current phase: **Phase 5 — Streaming Overlap Speech Detection**
+Current phase: **Phase 6 — Adaptive Streaming ASR Routing**
 
-Status: **Phases 0–5 implemented; real WhisperRT/LibriSpeech benchmarks remain to be run**
+Status: **Phases 0–6 implemented; real WhisperRT/LibriSpeech benchmarks remain to be run**
 
 This repository is a reproducible, phase-by-phase foundation for research on English automatic speech recognition over continuous audio streams with overlapped voices. The long-term system will combine streaming VAD, overlap speech detection, WhisperRT streaming ASR, adaptive routing, and later overlap-aware/multi-talker recognition. Phase 0 intentionally does not implement real inference, training, dataset downloads, or benchmark results.
 
@@ -37,6 +37,7 @@ In Phase 0, audio chunks, state transitions, configuration, backend interfaces, 
 | 3 | Deterministic two-speaker overlap generator, manifests, validation | 12 local demo mixtures generated and validated; real LibriSpeech generation not run |
 | 4 | Single-stream WhisperRT overlap baseline and honest WER policy | Manifest validation passed; real WhisperRT overlap results: **NOT MEASURED** |
 | 5 | Independent causal heuristic OSD, timing alignment, metrics, evaluator | Demo: precision 1.000, recall 0.636, F1 0.778, 15 ms mean delay, 0.00274 RTF |
+| 6 | Incremental VAD/OSD controller, configurable routing state machine, branch contract, oracle/predicted controls | **NOT MEASURED**: Phase 3 manifest plus WhisperRT runtime/model are required |
 
 The main research gap is therefore the real WhisperRT/LibriSpeech execution. Phases 1 and 4 are implemented, but their model/data benchmarks still need to run in an environment with PyTorch, the verified WhisperRT package, model weights, and dataset access. Phase 5 is a transparent spectral baseline, not a pretrained neural OSD result. See [`docs/phase_reports/`](docs/phase_reports/) for the evidence and limitations of every phase.
 
@@ -109,6 +110,15 @@ Kaggle Internet ON may be used by later phases for Hugging Face access. Internet
    ```
 
    For a full experiment, remove `--max-samples` only after the one-sample run succeeds. Phase 4 intentionally marks ordinary WER for overlapping mixtures as `NOT_MEASURED` because one transcript stream has no justified speaker assignment.
+
+8. Run Phase 6 routing controls only after the synthetic manifest and WhisperRT model configuration are available:
+
+   ```bash
+   !python scripts/run_adaptive.py --config configs/adaptive.yaml --override configs/kaggle_paths.yaml --validate-only
+   !python scripts/run_adaptive.py --config configs/adaptive.yaml --override configs/kaggle_paths.yaml --max-samples 1
+   ```
+
+   The runner writes separate always-normal, **ORACLE ROUTING — NOT A DEPLOYABLE SYSTEM**, and predicted-OSD artifacts. The default Phase 6 overlap route deliberately shares WhisperRT with the normal route, so it measures routing correctness, transition behavior, and overhead—not overlap-recognition improvement.
 
 #### Kaggle data modes
 
@@ -195,3 +205,18 @@ python3 scripts/smoke_test.py --phase 5 --validate-osd --config configs/overlap_
 ```
 
 Metrics are scored against source-timing ground truth, with explicit midpoint alignment for frame-size differences. Reports include overlap precision/recall/F1, a three-class confusion matrix, event detection delay when measurable, and OSD RTF. Synthetic mixtures are controlled development data and do not establish real conversational-overlap performance.
+
+## Phase 6 — Adaptive Streaming ASR Routing
+
+`AdaptiveStreamingASRPipeline` orchestrates timestamped chunks as `VAD → OSD → RoutingPolicy → ASRBranch`. Its explicit state machine is `NO_SPEECH`, `SINGLE_SPEAKER`, and `OVERLAP`; the logical routes are `idle`, `normal`, and `overlap`. `RoutingPolicy` exposes the OSD threshold, enter/exit persistence frames, optional minimum overlap duration, VAD gating, idle behavior, history window, and deterministic normal-route fallback in [`configs/adaptive.yaml`](configs/adaptive.yaml).
+
+The mandatory controls are `always_normal`, `oracle`, and `predicted`. Oracle routing uses Phase 3 source timing and is marked non-deployable. Predicted routing uses the configured streaming OSD. The default overlap branch is the *same* WhisperRT instance as the normal branch: every live chunk is processed once, logical route changes do not reset WhisperRT, and rolling hypotheses remain owned by the single shared stream. This is a deliberate Phase 6 control, not a multi-talker recognizer. A future separate branch may receive configurable preceding context; replay output is suppressed to avoid duplicate user-visible text.
+
+Run after generating/pointing the config at a valid Phase 3 manifest and configuring model weights:
+
+```bash
+python3 scripts/run_adaptive.py --config configs/adaptive.yaml --validate-only
+python3 scripts/run_adaptive.py --config configs/adaptive.yaml --max-samples 1
+```
+
+The runner saves routing JSONL traces, transition events, per-mode metrics/reports, route duration, routing precision/recall/F1, detection-to-routing delay, and end-to-end RTF. No Phase 6 benchmark values are claimed in this repository because the required manifest and WhisperRT runtime/model were not present during implementation.

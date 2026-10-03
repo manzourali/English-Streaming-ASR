@@ -1,5 +1,65 @@
 experiment:
-  name: phase6_adaptive_placeholder
-adaptive:
-  enabled: false
+  name: phase6_adaptive_streaming_asr
+  seed: 42
 
+runtime:
+  environment: auto
+  device: auto
+
+# Point `manifest` at Phase 3's overlap JSONL. Paths remain backend-configurable.
+data:
+  backend: local
+  manifest: data/manifests/test.jsonl
+  max_samples: null
+
+audio:
+  sample_rate: 16000
+  chunk_ms: 300
+
+model:
+  backend: huggingface
+  name: MLSpeech/WhisperRT-Streaming
+  repo_id: MLSpeech/WhisperRT-Streaming
+  filename: small_300.pt
+  device: auto
+  dtype: auto
+  language: en
+
+vad:
+  enabled: true
+  backend: dummy
+  threshold: 0.0001
+
+osd:
+  enabled: true
+  backend: heuristic
+  frame_ms: 30
+  speech_threshold: 0.0001
+  peak_threshold: 0.35
+  min_peak_distance_hz: 80.0
+
+routing:
+  # `predicted`, `oracle`, and `always_normal` are distinct experiment modes.
+  mode: predicted
+  overlap_threshold: 0.5
+  enter_overlap_frames: 2
+  exit_overlap_frames: 2
+  min_overlap_duration_ms: 0
+  use_vad: true
+  # For the shared Phase 6 control branch, retain WhisperRT context in silence.
+  idle_behavior: forward_normal
+  history_ms: 0
+  fallback_route: normal
+
+branches:
+  # Phase 6 control: both logical routes share one WhisperRT instance. This is
+  # not a multi-talker recognizer and measures routing overhead only.
+  overlap: shared_normal
+
+evaluation:
+  metrics:
+    - wer
+    - rtf
+    - routing_f1
+    - detection_to_routing_latency
+    - routing_overhead
