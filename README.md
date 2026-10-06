@@ -280,3 +280,9 @@ python3 scripts/run_multitalker.py --config configs/multitalker.yaml --max-sampl
 ```
 
 Set `branches.overlap: surt2` in an adaptive override to route Phase 6 overlap events to the structured SURT branch; `overlap_pre_roll_ms` is represented by the existing adaptive history setting. Multi-talker output is evaluated with permutation-invariant WER across output channels, never with speaker-attributed WER. No Phase 7 ASR, latency, memory, or routing result has been measured in this checkout.
+
+## Phase 11 audit status
+
+The Phase 11 repository audit finds a tested implementation/protocol foundation, not a fully validated final ASR system. The current checkout has no verified WhisperRT model run, multi-talker decoder/checkpoint, training checkpoint, final manifests, or Phase 9 final prediction records; final-system accuracy, latency, robustness, and reproducibility therefore remain unmeasured. A small heuristic-OSD result exists only for four locally generated synthetic mixtures and must not be generalized.
+
+Use current HEAD as the source baseline for Kaggle **only after** pinning/testing the runtime and model assets, attaching revisioned data/manifests, configuring a verified multi-talker decoder when needed, and exporting `/kaggle/working` checkpoints/results to persistent versioned storage after each session. Kaggle GPU quota must be checked against the current account/plan because limits may change. See `docs/audits/project_audit.md` for the complete evidence, phase gates, execution order, and persistence strategy; see `outputs/audit/project_audit.json` for the machine-readable audit.

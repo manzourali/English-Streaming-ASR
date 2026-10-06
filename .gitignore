@@ -7,6 +7,7 @@ venv/
 .env
 checkpoints/*
 outputs/*
+!outputs/audit
 data/*
 !data/manifests/
 !data/manifests/.gitkeep

@@ -1,0 +1,78 @@
+{
+  "audit_timestamp": "2026-10-06T07:32:11Z",
+  "git_commit": "fe27cbb38cb78c77b5606f5a09ef076198def66f",
+  "audit_scope": {
+    "code_modified": false,
+    "expensive_experiments_executed": false,
+    "tests_executed": "python3 -m pytest -q: 44 passed, 1 skipped",
+    "notebook_validation": "python3 scripts/validate_notebooks.py: 11/11 valid"
+  },
+  "phases": [
+    {"phase": 0, "commit": "b4cb1e7", "implementation": "IMPLEMENTED", "execution": "EXECUTED", "validation": "VALIDATED", "metrics": "NOT_MEASURED", "status": "COMPLETE"},
+    {"phase": 1, "commit": "577cb79", "implementation": "IMPLEMENTED", "execution": "NOT_EXECUTED", "validation": "NOT_VALIDATED", "metrics": "NOT_MEASURED", "status": "IMPLEMENTED BUT NOT VALIDATED"},
+    {"phase": 2, "commit": "8921892", "implementation": "IMPLEMENTED", "execution": "EXECUTED", "validation": "PARTIAL", "metrics": "PARTIAL", "status": "PARTIAL"},
+    {"phase": 3, "commit": "38354b0", "implementation": "IMPLEMENTED", "execution": "EXECUTED", "validation": "PARTIAL", "metrics": "NOT_MEASURED", "status": "PARTIAL"},
+    {"phase": 4, "commit": "8bdce5d", "implementation": "IMPLEMENTED", "execution": "NOT_EXECUTED", "validation": "NOT_VALIDATED", "metrics": "NOT_MEASURED", "status": "IMPLEMENTED BUT NOT VALIDATED"},
+    {"phase": 5, "commit": "229317c", "implementation": "IMPLEMENTED", "execution": "EXECUTED", "validation": "PARTIAL", "metrics": "PARTIAL", "status": "PARTIAL"},
+    {"phase": 6, "commit": "ddf54ef", "implementation": "IMPLEMENTED", "execution": "NOT_EXECUTED", "validation": "NOT_VALIDATED", "metrics": "NOT_MEASURED", "status": "IMPLEMENTED BUT NOT VALIDATED"},
+    {"phase": 7, "commit": "c316af1", "implementation": "PARTIAL", "execution": "NOT_EXECUTED", "validation": "NOT_VALIDATED", "metrics": "NOT_MEASURED", "status": "BLOCKED"},
+    {"phase": 8, "commit": "2059861", "implementation": "PARTIAL", "execution": "NOT_EXECUTED", "validation": "NOT_VALIDATED", "metrics": "NOT_MEASURED", "status": "BLOCKED"},
+    {"phase": 9, "commit": "f36af16", "implementation": "IMPLEMENTED", "execution": "EXECUTED_PROTOCOL_ONLY", "validation": "NOT_VALIDATED", "metrics": "NOT_MEASURED", "status": "IMPLEMENTED BUT NOT VALIDATED"},
+    {"phase": 10, "commit": "fe27cbb", "implementation": "IMPLEMENTED", "execution": "PARTIAL", "validation": "PARTIAL", "metrics": "NOT_REPRODUCED", "status": "IMPLEMENTED BUT NOT VALIDATED"}
+  ],
+  "datasets": [
+    {"name": "LibriSpeech", "hf_id": "openslr/librispeech_asr", "kaggle_id": null, "local_path": null, "required": true, "generated": false, "status": "CONFIGURED_NOT_VERIFIED"},
+    {"name": "synthetic_overlap", "hf_id": null, "kaggle_id": null, "local_path": "outputs/synthetic_overlap", "required": true, "generated": true, "status": "SMALL_LOCAL_ARTIFACT_ONLY"},
+    {"name": "LibriSpeechMix/Libri2Mix/Libri3Mix", "hf_id": null, "kaggle_id": null, "local_path": null, "required": false, "generated": false, "status": "NOT_IMPLEMENTED"},
+    {"name": "LibriCSS", "hf_id": null, "kaggle_id": null, "local_path": null, "required": false, "generated": false, "status": "NOT_IMPLEMENTED"},
+    {"name": "AMI/CHiME-6", "hf_id": null, "kaggle_id": null, "local_path": null, "required": false, "generated": false, "status": "NOT_IMPLEMENTED"}
+  ],
+  "models": [
+    {"name": "MLSpeech/WhisperRT-Streaming", "model_id": "MLSpeech/WhisperRT-Streaming", "checkpoint": "small_300.pt", "source": "Hugging Face", "actual_tested": false, "status": "CONFIGURED_NOT_EXECUTED"},
+    {"name": "WebRTC VAD", "model_id": null, "source": "optional Python dependency", "actual_tested": true, "status": "SMALL_UNSCORED_RUN"},
+    {"name": "heuristic OSD", "model_id": null, "source": "project code", "actual_tested": true, "status": "SMALL_SYNTHETIC_RUN"},
+    {"name": "SURT-2.0", "model_id": "SURT-2.0", "source": "external recipe", "actual_tested": false, "status": "DECODER_FACTORY_AND_CHECKPOINT_NULL"},
+    {"name": "fine-tuned SURT", "model_id": null, "source": "local checkpoint intended", "actual_tested": false, "status": "NOT_PRESENT"}
+  ],
+  "kaggle_readiness": {
+    "status": "YES_AFTER_SPECIFIC_FIXES",
+    "current_head_runnable_at": "model-free tests and static notebook validation",
+    "blocking_items": [
+      "Pinned WhisperRT/PyTorch runtime and verified model access",
+      "Frozen manifest/data attachments and exact path overrides",
+      "Verified multi-talker decoder factory and checkpoint",
+      "Training backend/checkpoint state if training is pursued",
+      "Export of /kaggle/working artifacts to versioned persistent storage"
+    ],
+    "recommended_strategy": "GitHub source + Hugging Face canonical public assets + versioned Kaggle Dataset artifacts + Kaggle execution outputs"
+  },
+  "checkpoints": [],
+  "reproducibility": {
+    "final_results": "NOT_REPRODUCED",
+    "config_and_provenance_utilities": "IMPLEMENTED",
+    "frozen_final_inputs_present": false,
+    "resumable_training_state_present": false,
+    "current_output_persistence": "PARTIAL"
+  },
+  "blocking_issues": [
+    "No real WhisperRT runtime/checkpoint execution evidence",
+    "No final train/validation/test manifests in data/manifests",
+    "No configured multi-talker decoder factory/checkpoint",
+    "No training backend/checkpoint/resume state",
+    "No final per-example predictions or measured Phase 9 results",
+    "Kaggle asset bootstrap and export workflow are not tested"
+  ],
+  "required_external_verification": [
+    "WhisperRT package/checkpoint revision, license, and Kaggle compatibility",
+    "LibriSpeech source revision/license/access",
+    "SURT recipe/runtime/checkpoint/API/license/VRAM",
+    "Current Kaggle account GPU quota",
+    "Any external evaluation dataset and its license"
+  ],
+  "recommendation": {
+    "git_strategy": "Do not reset. Create a forward correction branch from current HEAD.",
+    "return_to_earlier_commit": false,
+    "next_execution_order": ["Phase 0 environment/model load", "Phase 1 clean baseline", "Phase 2 VAD integration", "Phase 3 frozen synthetic data", "Phase 4 overlap baseline", "Phase 5 OSD", "Phase 6 routing controls", "Phase 7 multi-talker", "Phase 8 only if justified", "Phase 9/10 final evaluation and artifact"],
+    "audit_report": "docs/audits/project_audit.md"
+  }
+}
