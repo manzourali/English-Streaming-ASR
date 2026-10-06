@@ -1,0 +1,7 @@
+cff-version: 1.2.0
+message: "If you use this research artifact, cite the repository and its documented phase reports."
+title: "English Streaming ASR with Overlapped Speech"
+version: 0.1.0
+date-released: 2026-10-06
+license: MIT
+abstract: "A phase-by-phase research artifact for English streaming ASR under overlapping speech, with guarded reproducibility and evaluation protocols."

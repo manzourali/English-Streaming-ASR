@@ -10,3 +10,16 @@ Phase 7 maps to overlap-aware recognition: an external SURT 2.0-compatible branc
 Phase 8 maps to adaptation feasibility: a reproducible bridge from Phase 3 manifests to SURT-style channel targets, batch collation, leakage control, checkpoint metadata, and strict external recipe integration. It does not claim local model adaptation, PEFT support, or a performance improvement.
 
 Phase 9 maps to the evidence layer: a frozen-system manifest, reproducible per-example records, comparable baseline/ablation analysis, uncertainty, computational accounting, and programmatic report generation. It provides no measured thesis claim until verified systems and untouched test data are executed.
+
+## Final thesis mapping
+
+| Thesis section | Project component | Evidence status |
+| --- | --- | --- |
+| Problem definition | English streaming ASR under overlap | Methodological scope documented |
+| Methodology | Stateful VAD/OSD/adaptive architecture | IMPLEMENTED; architecture tests |
+| Dataset | Phase 3 deterministic two-source mixtures | IMPLEMENTED; synthetic limits documented |
+| OSD | Causal heuristic OSD | IMPLEMENTED; no final frozen OSD result |
+| Multi-talker ASR | External SURT-compatible adapter | IMPLEMENTED; external model NOT REPRODUCED |
+| Training | External-recipe feasibility bridge | IMPLEMENTED; local training NOT TECHNICALLY SUPPORTED |
+| Evaluation | Frozen Phase 9 records/reports/ablations | IMPLEMENTED; final empirical records NOT MEASURED |
+| Discussion | Claims audit, threats, and future work | IMPLEMENTED; no unsupported conclusion |

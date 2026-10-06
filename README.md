@@ -1,8 +1,8 @@
 # English Streaming ASR with Overlapped Speech
 
-Current phase: **Phase 9 — Evaluation, Ablation, and Robustness Protocol**
+Current phase: **Phase 10 — Final Reproducibility and Research Artifact**
 
-Status: **Phases 0–9 implemented; final measured systems and datasets remain to be executed**
+Status: **Phases 0–10 finalized as a reproducibility artifact; full empirical reproduction remains pending external checkpoints and data**
 
 This repository is a reproducible, phase-by-phase foundation for research on English automatic speech recognition over continuous audio streams with overlapped voices. The long-term system will combine streaming VAD, overlap speech detection, WhisperRT streaming ASR, adaptive routing, and later overlap-aware/multi-talker recognition. Phase 0 intentionally does not implement real inference, training, dataset downloads, or benchmark results.
 
@@ -41,12 +41,13 @@ In Phase 0, audio chunks, state transitions, configuration, backend interfaces, 
 | 7 | SURT 2.0-compatible structured overlap branch, low-latency window adapter, PI-WER metric, adaptive integration | **NOT MEASURED**: verified external SURT decoder/checkpoint, Phase 3 manifest, and compute are required |
 | 8 | Training-manifest/HEAT target preparation, leakage checks, collator, checkpoint lifecycle, external-training contract | **TRAINING NOT TECHNICALLY SUPPORTED** locally: no pinned Icefall recipe/trainable checkpoint/tokenizer/backend factory |
 | 9 | Frozen evaluation protocol, per-example result schema, aggregate/stratified analysis, uncertainty, benchmark/report generation | **NOT MEASURED**: no verified final checkpoints, test manifest, or execution hardware available |
+| 10 | Environment/artifact audit, provenance hashes, reproducibility levels, final specification, claims/thesis/future-work documentation | Code and protocol **VERIFIED**; full research result reproduction **NOT REPRODUCED** |
 
 The main research gap is therefore the real WhisperRT/LibriSpeech execution. Phases 1 and 4 are implemented, but their model/data benchmarks still need to run in an environment with PyTorch, the verified WhisperRT package, model weights, and dataset access. Phase 5 is a transparent spectral baseline, not a pretrained neural OSD result. See [`docs/phase_reports/`](docs/phase_reports/) for the evidence and limitations of every phase.
 
 ## Installation
 
-Python 3.9+ is supported; Python 3.10 is the documented Conda target. From the repository root:
+Python 3.10+ is supported; Python 3.10 is the documented Conda target. From the repository root:
 
 ```bash
 python -m venv .venv
@@ -80,6 +81,22 @@ python3 scripts/benchmark.py --records outputs/predictions/final_records.jsonl
 ```
 
 The current configuration is a protocol freeze, not a measured final-system freeze: model checkpoints remain unset and all Phase 9 scientific outcomes are **NOT MEASURED**. See [the Phase 9 report](docs/phase_reports/phase_9_report.md).
+
+## Final reproduction and research status
+
+The final artifact distinguishes code/protocol verification from empirical reproduction. Use the single entry point:
+
+```bash
+python3 scripts/reproduce.py --level code   # environment + unit tests
+python3 scripts/reproduce.py --level small  # adds model-free Phase 8/9 smoke and artifact audit
+python3 scripts/reproduce.py --level full   # requires final checkpoints, manifests, and per-example records
+```
+
+`code` and `small` are the only levels verified in this checkout. `full` intentionally exits with **NOT REPRODUCED** until external WhisperRT/SURT assets and final record files are present. The final system specification, provenance workflow, research answers, claims audit, limitations, and future work are in [docs](docs/). Start with [the reproducibility guide](docs/reproducibility.md) and [final system specification](docs/final_system_specification.md).
+
+## Citation
+
+Use [CITATION.cff](CITATION.cff) when citing this artifact. Do not cite it as evidence of measured end-to-end ASR, routing, multi-talker, or fine-tuning improvements unless the separately archived final result records and frozen external assets are available.
 
 ## Configuration and Kaggle
 
