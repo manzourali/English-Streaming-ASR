@@ -1,6 +1,78 @@
 experiment:
-  name: phase9_evaluation_placeholder
-evaluation:
-  enabled: false
-  metrics: []
+  name: phase9_frozen_evaluation
+  seed: 42
 
+runtime:
+  environment: auto
+  device: auto
+
+# This is a freeze manifest, not a tuning configuration. Replace every null
+# only after validation/model selection, never after inspecting final test data.
+frozen_system:
+  git_commit: auto
+  whisperrt_checkpoint: null
+  surt_checkpoint: null
+  finetuned_surt_checkpoint: null
+  vad_config: configs/streaming_vad.yaml
+  osd_config: configs/overlap_detection.yaml
+  routing_config: configs/adaptive.yaml
+  training_config: configs/training.yaml
+  train_manifest: data/manifests/train.jsonl
+  validation_manifest: data/manifests/validation.jsonl
+  test_manifest: data/manifests/test.jsonl
+
+evaluation:
+  input_records: []
+  bootstrap_iterations: 1000
+  metric_precision: 4
+  test_set_protected: true
+  external_dataset: null
+  strata: [overlap_regime, temporal_condition]
+
+systems:
+  primary:
+    - clean_whisperrt
+    - overlap_whisperrt
+    - multitalker_base
+    - multitalker_finetuned
+    - adaptive_predicted_osd
+  oracle:
+    - adaptive_oracle_osd
+
+ablations:
+  - name: baseline
+    vad: false
+    osd: false
+    routing: false
+    multitalker: false
+    finetuned: false
+  - name: vad_only
+    vad: true
+    osd: false
+    routing: false
+    multitalker: false
+    finetuned: false
+  - name: osd_only
+    vad: true
+    osd: true
+    routing: false
+    multitalker: false
+    finetuned: false
+  - name: routed_whisperrt
+    vad: true
+    osd: true
+    routing: true
+    multitalker: false
+    finetuned: false
+  - name: adaptive_multitalker
+    vad: true
+    osd: true
+    routing: true
+    multitalker: true
+    finetuned: false
+  - name: adaptive_finetuned
+    vad: true
+    osd: true
+    routing: true
+    multitalker: true
+    finetuned: true

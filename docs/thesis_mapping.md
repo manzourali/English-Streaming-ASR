@@ -8,3 +8,5 @@ Phase 6 maps to the adaptive-control contribution: a stateful VAD/OSD router wit
 Phase 7 maps to overlap-aware recognition: an external SURT 2.0-compatible branch with structured unordered output channels, window/state management, permutation-invariant evaluation, and adaptive-branch integration. It does not perform diarization or identify people; concrete checkpoint reproduction and any training remain later evidence-gathering work.
 
 Phase 8 maps to adaptation feasibility: a reproducible bridge from Phase 3 manifests to SURT-style channel targets, batch collation, leakage control, checkpoint metadata, and strict external recipe integration. It does not claim local model adaptation, PEFT support, or a performance improvement.
+
+Phase 9 maps to the evidence layer: a frozen-system manifest, reproducible per-example records, comparable baseline/ablation analysis, uncertainty, computational accounting, and programmatic report generation. It provides no measured thesis claim until verified systems and untouched test data are executed.

@@ -17,6 +17,7 @@ from streaming_asr.datasets.overlap_generator import OverlapGenerator, SourceUtt
 from streaming_asr.datasets.validators import validate_overlap_records
 from streaming_asr.datasets.manifests import OverlapRecord, OverlapSource, read_overlap_manifest
 from streaming_asr.training import SurtTrainingCollator, surt_training_example, validate_training_examples
+from streaming_asr.evaluation import EvaluationRecord, Evaluator
 from streaming_asr.metrics.osd import ground_truth_frames
 from streaming_asr.pipeline.streaming import StreamingASRPipeline
 from streaming_asr.utils.config import Config
@@ -64,6 +65,7 @@ def main() -> int:
     overlap_ok = None
     osd_ok = None
     training_ok = None
+    evaluation_ok = None
     if args.phase == 3 and args.demo_overlap:
         root = paths.outputs / "smoke_overlap"
         source_a = SourceUtterance("a", "speaker_a", np.ones(sample_rate // 5, dtype=np.float32) * 0.1, sample_rate, "alpha", str(root / "a.wav"))
@@ -98,7 +100,11 @@ def main() -> int:
         example = surt_training_example(record)
         batch = SurtTrainingCollator(sample_rate)([example], [np.ones(sample_rate // 10, dtype=np.float32)])
         training_ok = not validate_training_examples([example]) and batch.input_values.shape[0] == 1 and batch.channel_targets == (("alpha", "bravo"),)
-    result = {"phase": f"phase{args.phase}", "experiment": config.get("experiment.name"), "status": "success", "environment": config.get("runtime.environment"), "seed": config.get("experiment.seed"), "chunks": count, "finalized": state.finalized, "real_vad": bool(args.real_vad and args.phase == 2), "demo_overlap": overlap_ok, "osd_validation": osd_ok, "training_smoke": training_ok}
+    if args.phase == 9:
+        record = EvaluationRecord("smoke", "sample", "test", "synthetic", "wer", 0.25, error_count=1, reference_units=4, overlap_regime="medium", audio_seconds=1.0, processing_seconds=0.5)
+        summary = Evaluator(10, 42).summarize([record])[0]
+        evaluation_ok = summary.value == 0.25 and summary.samples == 1
+    result = {"phase": f"phase{args.phase}", "experiment": config.get("experiment.name"), "status": "success", "environment": config.get("runtime.environment"), "seed": config.get("experiment.seed"), "chunks": count, "finalized": state.finalized, "real_vad": bool(args.real_vad and args.phase == 2), "demo_overlap": overlap_ok, "osd_validation": osd_ok, "training_smoke": training_ok, "evaluation_smoke": evaluation_ok}
     (run_dir / "smoke_test.json").write_text(json.dumps(result, indent=2), encoding="utf-8")
     logger.info("Smoke test completed: %s", result)
     print(json.dumps(result, indent=2))
