@@ -1,8 +1,8 @@
 # English Streaming ASR with Overlapped Speech
 
-Current phase: **Phase 7 — Overlap-Aware / Multi-Talker ASR**
+Current phase: **Phase 8 — Training Feasibility / Fine-Tuning Infrastructure**
 
-Status: **Phases 0–7 implemented; real WhisperRT/SURT benchmarks remain to be run**
+Status: **Phases 0–8 implemented; external SURT training remains to be verified and run**
 
 This repository is a reproducible, phase-by-phase foundation for research on English automatic speech recognition over continuous audio streams with overlapped voices. The long-term system will combine streaming VAD, overlap speech detection, WhisperRT streaming ASR, adaptive routing, and later overlap-aware/multi-talker recognition. Phase 0 intentionally does not implement real inference, training, dataset downloads, or benchmark results.
 
@@ -39,6 +39,7 @@ In Phase 0, audio chunks, state transitions, configuration, backend interfaces, 
 | 5 | Independent causal heuristic OSD, timing alignment, metrics, evaluator | Demo: precision 1.000, recall 0.636, F1 0.778, 15 ms mean delay, 0.00274 RTF |
 | 6 | Incremental VAD/OSD controller, configurable routing state machine, branch contract, oracle/predicted controls | **NOT MEASURED**: Phase 3 manifest plus WhisperRT runtime/model are required |
 | 7 | SURT 2.0-compatible structured overlap branch, low-latency window adapter, PI-WER metric, adaptive integration | **NOT MEASURED**: verified external SURT decoder/checkpoint, Phase 3 manifest, and compute are required |
+| 8 | Training-manifest/HEAT target preparation, leakage checks, collator, checkpoint lifecycle, external-training contract | **TRAINING NOT TECHNICALLY SUPPORTED** locally: no pinned Icefall recipe/trainable checkpoint/tokenizer/backend factory |
 
 The main research gap is therefore the real WhisperRT/LibriSpeech execution. Phases 1 and 4 are implemented, but their model/data benchmarks still need to run in an environment with PyTorch, the verified WhisperRT package, model weights, and dataset access. Phase 5 is a transparent spectral baseline, not a pretrained neural OSD result. See [`docs/phase_reports/`](docs/phase_reports/) for the evidence and limitations of every phase.
 
@@ -53,6 +54,17 @@ python -m pip install -r requirements.txt
 ```
 
 The base installation is deliberately lightweight. PyTorch, Hugging Face `datasets`, and the official WhisperRT dependency stack are optional because the repository can run its infrastructure, VAD, synthetic-data, and heuristic OSD checks without them.
+
+## Phase 8 — Training feasibility
+
+The selected SURT 2.0 family has official external Icefall recipes, but the Phase 7 project adapter exposes inference only. Phase 8 therefore implements a strict feasibility bridge: Phase 3 manifest-to-HEAT-channel targets, split-leakage validation, variable-length collation, checkpoint/resume lifecycle, finite-loss detection, and a version-pinned `ExternalSurtTrainingBackend` contract. It does **not** invent a Transformers/PEFT training procedure.
+
+```bash
+python3 scripts/smoke_test.py --phase 8 --config configs/training.yaml
+python3 scripts/train_asr.py --config configs/training.yaml --validate-only
+```
+
+The smoke path is model-free. A real training command additionally requires a valid Phase 3 train/validation/test manifest and an override whose `model.backend_factory` wraps one exact, verified Icefall/SURT recipe. Until then, the correct status is **TRAINING NOT TECHNICALLY SUPPORTED**, not a reported fine-tuning result. See [model compatibility](docs/training_model_compatibility.md), [target objective](docs/training_objective.md), and [the Phase 8 report](docs/phase_reports/phase_8_report.md).
 
 ## Configuration and Kaggle
 

@@ -1,6 +1,56 @@
 experiment:
-  name: phase8_training_placeholder
-training:
-  enabled: false
-  epochs: 0
+  name: phase8_surt_training_feasibility
+  seed: 42
 
+runtime:
+  environment: auto
+  device: auto
+
+model:
+  name: SURT-2.0
+  checkpoint: null
+  strategy: no_project_local_finetuning
+  # Must create ExternalSurtTrainingBackend from a pinned Icefall/SURT recipe.
+  # The Phase 7 inference decoder_factory is not a training backend.
+  backend_factory: null
+  trainable_parameters: not_measured
+
+dataset:
+  train_manifest: data/manifests/train.jsonl
+  validation_manifest: data/manifests/validation.jsonl
+  test_manifest: data/manifests/test.jsonl
+  condition: overlap
+  clean_ratio: 0.0
+  overlap_ratio: 1.0
+  max_duration: 30.0
+  sample_rate: 16000
+
+training:
+  epochs: 3
+  max_steps: null
+  batch_size: 1
+  gradient_accumulation: 1
+  learning_rate: null
+  warmup_ratio: null
+  weight_decay: null
+  max_grad_norm: null
+  eval_steps: 50
+  save_steps: 50
+  early_stopping_patience: 3
+  resume_from: null
+
+peft:
+  enabled: false
+  method: none
+  rank: null
+  alpha: null
+  dropout: null
+  target_modules: []
+
+precision:
+  dtype: not_configured
+  gradient_checkpointing: false
+
+evaluation:
+  metric: permutation_invariant_wer
+  test_set_protected: true

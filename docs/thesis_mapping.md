@@ -6,3 +6,5 @@ Phase 2 establishes a streaming speech-activity layer that enables later tempora
 Phase 6 maps to the adaptive-control contribution: a stateful VAD/OSD router with oracle and predicted experimental conditions, transition tracing, and real-time overhead accounting. It establishes the interface and evidence path for Phase 7, but does not implement speaker identities, separation, serialized output, or a multi-talker recognizer.
 
 Phase 7 maps to overlap-aware recognition: an external SURT 2.0-compatible branch with structured unordered output channels, window/state management, permutation-invariant evaluation, and adaptive-branch integration. It does not perform diarization or identify people; concrete checkpoint reproduction and any training remain later evidence-gathering work.
+
+Phase 8 maps to adaptation feasibility: a reproducible bridge from Phase 3 manifests to SURT-style channel targets, batch collation, leakage control, checkpoint metadata, and strict external recipe integration. It does not claim local model adaptation, PEFT support, or a performance improvement.
