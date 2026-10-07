@@ -45,6 +45,47 @@ In Phase 0, audio chunks, state transitions, configuration, backend interfaces, 
 
 The main research gap is therefore the real WhisperRT/LibriSpeech execution. Phases 1 and 4 are implemented, but their model/data benchmarks still need to run in an environment with PyTorch, the verified WhisperRT package, model weights, and dataset access. Phase 5 is a transparent spectral baseline, not a pretrained neural OSD result. See [`docs/phase_reports/`](docs/phase_reports/) for the evidence and limitations of every phase.
 
+## Practical execution and Kaggle
+
+Use the current `master` HEAD; do **not** reset to an earlier phase merely to run it. The repository contains all phase code, but full end-to-end empirical results remain pending external WhisperRT/SURT runtimes, checkpoints, and persistent manifests.
+
+From a fresh Kaggle notebook, enable Internet, then run:
+
+```bash
+!git clone https://github.com/manzourali/English-Streaming-ASR.git
+```
+
+```python
+%cd /kaggle/working/English-Streaming-ASR
+```
+
+```bash
+!python -m pip install -q -r requirements.txt
+!python -m pip install -q -e ".[audio,phase1,phase2]"
+!python scripts/check_environment.py
+!python scripts/smoke_test.py --phase 0 --config configs/base.yaml
+```
+
+Run `notebooks/00_environment.ipynb` first if you want a notebook view of the smoke path. Skip `notebooks/01_dataset_validation.ipynb`: it is an intentional placeholder; dataset loading and overlap-manifest validation already live in project scripts. Then run the deterministic Phase 3 demo before downloading a model:
+
+```bash
+!python scripts/generate_overlap.py --config configs/overlap_dataset.yaml --demo
+!python scripts/evaluate_osd.py --config configs/overlap_detection.yaml --max-samples 4
+```
+
+For the full, beginner-oriented Kaggle workflow, asset setup, notebook order, checkpoint persistence, and blocking external requirements, see [`docs/TUTORIAL_KAGGLE.md`](docs/TUTORIAL_KAGGLE.md). Use [`docs/KAGGLE_NOTEBOOK_GUIDE.md`](docs/KAGGLE_NOTEBOOK_GUIDE.md), [`docs/phase_dependency_map.md`](docs/phase_dependency_map.md), and [`docs/execution_matrix.md`](docs/execution_matrix.md) as the execution map.
+
+### Dataset, model, and checkpoint strategy
+
+- Download public LibriSpeech (`openslr/librispeech_asr`) only when running a real baseline or non-demo overlap generation; persist generated Phase 3 manifests/audio as a private Kaggle Dataset for later phases.
+- The configured WhisperRT checkpoint is `MLSpeech/WhisperRT-Streaming` / `small_300.pt`. Its separate official runtime (`whisper_rt` module), PyTorch, and Hub authentication/access must be verified before Phase 1. The repository does not bundle them.
+- Phase 7/8 need a version-pinned external SURT/Icefall decoder or training backend; this code intentionally does not substitute WhisperRT for a multi-talker model.
+- Persist exact config overrides, input manifests, prediction JSONL, metrics/reports, model/adapter weights, and—in training—optimizer, scheduler, trainer, epoch/step, random, and tokenizer states before a Kaggle session ends.
+
+### Current limitations
+
+The current checkout can run its infrastructure, VAD, synthetic overlap, heuristic OSD, and validation workflows. It cannot yet substantiate a final end-to-end multi-talker ASR claim because no verified real WhisperRT benchmark, SURT decoder/checkpoint, SURT training backend/checkpoint, or final comparable evaluation records are committed. See [`docs/final_system_specification.md`](docs/final_system_specification.md) for the frozen technical status.
+
 ## Installation
 
 Python 3.10+ is supported; Python 3.10 is the documented Conda target. From the repository root:
