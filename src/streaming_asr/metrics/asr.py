@@ -44,6 +44,7 @@ class PermutationWER:
     wer: float
     assignment: tuple[int, ...]
     reference_words: int
+    errors: int = 0
 
 
 def permutation_invariant_word_error_rate(references: list[str], hypotheses: list[str]) -> PermutationWER:
@@ -64,4 +65,4 @@ def permutation_invariant_word_error_rate(references: list[str], hypotheses: lis
         if best_errors is None or errors < best_errors:
             best_errors, best_assignment = errors, assignment
     assert best_errors is not None
-    return PermutationWER(best_errors / ref_words if ref_words else (0.0 if best_errors == 0 else 1.0), best_assignment, ref_words)
+    return PermutationWER(best_errors / ref_words if ref_words else (0.0 if best_errors == 0 else 1.0), best_assignment, ref_words, best_errors)

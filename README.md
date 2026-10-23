@@ -1,21 +1,38 @@
 # English Streaming ASR with Overlapped Speech
 
-Current phase: **Phase 10 — Final Reproducibility and Research Artifact**
+Current architecture: **continuous SURT 2.0 inference**, with 80-bin log-Mel
+features, dual-path masking, a shared streaming Zipformer and stateless RNN-T.
+The heuristic WhisperRT/SURT router and waveform-window pseudo-adapter have
+been removed. WhisperRT remains an independent benchmark command.
 
-Status: **Phases 0–10 finalized as a reproducibility artifact; full empirical reproduction remains pending external checkpoints and data**
-
-This repository is a reproducible, phase-by-phase foundation for research on English automatic speech recognition over continuous audio streams with overlapped voices. The long-term system will combine streaming VAD, overlap speech detection, WhisperRT streaming ASR, adaptive routing, and later overlap-aware/multi-talker recognition. Phase 0 intentionally does not implement real inference, training, dataset downloads, or benchmark results.
+The scheduler and correctness fixes are locally tested. Recognition requires
+trained native streaming exports and a matching tokenizer; these assets are
+not bundled. PyTorch execution, real-corpus WER and real-model latency remain
+unverified in this checkout. See [stage2_report.md](docs/stages/stage2_report.md) for the
+current architecture, migration, complete backend contract and test evidence.
+The phase documents and notebooks below record the earlier research scaffold;
+their routing APIs and windowed inference instructions are historical.
 
 ## Architecture
 
 ```text
-Audio Stream → Streaming Buffer → Streaming VAD → Overlap Detection
-                                      ↓                ↓
-                                  Normal ASR      Overlap-aware ASR
-                                      └──────→ Incremental Transcript → Evaluation
+16 kHz mono PCM -> 80-bin log-Mel -> dual-path masks -> two feature channels
+  -> shared streaming Zipformer -> optional channel-tying LSTM
+  -> shared stateless predictor + RNN-T joiner -> channel text/endpoint events
 ```
 
-In Phase 0, audio chunks, state transitions, configuration, backend interfaces, and deterministic dummy VAD/OSD components are implemented. WhisperRT, real VAD/OSD, adaptive routing, diarization, and multi-talker ASR are future work. Speaker diarization, identification, enrollment, video, microphone arrays, and beamforming are out of scope.
+Every audio sample, including silence, follows the same model. Model calls
+advance 32 frames (320 ms); acoustic caches and feature buffers are bounded.
+Channel numbers describe output channels, not permanent speaker identities.
+
+```bash
+python3 -m pip install -e ".[dev]"
+pytest -q
+# After supplying trained exports and a model.backend_factory override:
+python3 scripts/run_streaming.py --audio meeting.wav --override surt_override.yaml
+# Independent historical single-speaker baseline:
+python3 scripts/run_baseline.py --config configs/whisperrt_baseline.yaml
+```
 
 ## Repository
 
@@ -37,8 +54,8 @@ In Phase 0, audio chunks, state transitions, configuration, backend interfaces, 
 | 3 | Deterministic two-speaker overlap generator, manifests, validation | 12 local demo mixtures generated and validated; real LibriSpeech generation not run |
 | 4 | Single-stream WhisperRT overlap baseline and honest WER policy | Manifest validation passed; real WhisperRT overlap results: **NOT MEASURED** |
 | 5 | Independent causal heuristic OSD, timing alignment, metrics, evaluator | Demo: precision 1.000, recall 0.636, F1 0.778, 15 ms mean delay, 0.00274 RTF |
-| 6 | Incremental VAD/OSD controller, configurable routing state machine, branch contract, oracle/predicted controls | **NOT MEASURED**: Phase 3 manifest plus WhisperRT runtime/model are required |
-| 7 | SURT 2.0-compatible structured overlap branch, low-latency window adapter, PI-WER metric, adaptive integration | **NOT MEASURED**: verified external SURT decoder/checkpoint, Phase 3 manifest, and compute are required |
+| 6 | Historical routing experiment; execution replaced by continuous SURT in stage2 | Retired |
+| 7 | Native SURT scheduler and structured PyTorch composition; see stage2 report | Real ASR remains unmeasured without trained exports |
 | 8 | Training-manifest/HEAT target preparation, leakage checks, collator, checkpoint lifecycle, external-training contract | **TRAINING NOT TECHNICALLY SUPPORTED** locally: no pinned Icefall recipe/trainable checkpoint/tokenizer/backend factory |
 | 9 | Frozen evaluation protocol, per-example result schema, aggregate/stratified analysis, uncertainty, benchmark/report generation | **NOT MEASURED**: no verified final checkpoints, test manifest, or execution hardware available |
 | 10 | Environment/artifact audit, provenance hashes, reproducibility levels, final specification, claims/thesis/future-work documentation | Code and protocol **VERIFIED**; full research result reproduction **NOT REPRODUCED** |

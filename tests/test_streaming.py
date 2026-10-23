@@ -14,3 +14,13 @@ def test_engine_lifecycle_and_indices():
 def test_engine_requires_start():
     with pytest.raises(StreamingStateError): StreamingEngine().process(next(iter(AudioStream.from_array(np.ones(1), 1, 1))))
 
+
+
+def test_sample_gaps_and_rate_changes_are_rejected():
+    from streaming_asr.audio.stream import AudioChunk
+    engine = StreamingEngine(); engine.start()
+    engine.process(AudioChunk(np.zeros(160), 16000, 0, .01, 0))
+    with pytest.raises(StreamingStateError):
+        engine.process(AudioChunk(np.zeros(160), 16000, .02, .03, 1))
+    with pytest.raises(StreamingStateError):
+        engine.process(AudioChunk(np.zeros(80), 8000, .01, .02, 1))

@@ -23,10 +23,15 @@ class MetricSummary:
 
 
 def _aggregate(records: list[EvaluationRecord]) -> float:
-    weighted = [record for record in records if record.error_count is not None and record.reference_units]
-    if weighted and len(weighted) == len(records):
-        units = sum(record.reference_units or 0 for record in records)
-        return sum(record.error_count or 0 for record in records) / units if units else 0.0
+    if not records:
+        raise ValueError("Cannot aggregate empty records")
+    modes = {(r.error_count is not None, r.reference_units is not None) for r in records}
+    if len(modes) != 1 or next(iter(modes)) not in {(True, True), (False, False)}:
+        raise ValueError("Mixed or incomplete count-based aggregation is invalid")
+    if next(iter(modes)) == (True, True):
+        units = sum(r.reference_units for r in records)
+        errors = sum(r.error_count for r in records)
+        return errors / units if units else (float("inf") if errors else 0.0)
     return sum(record.value for record in records) / len(records)
 
 

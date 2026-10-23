@@ -5,7 +5,7 @@ from collections import Counter
 from typing import Iterable
 
 from streaming_asr.models.overlap_detector import OverlapLabel
-from streaming_asr.pipeline.adaptive import Route, RoutingEvent, RoutingState
+from .routing_types import Route, RoutingEvent, RoutingState
 
 
 def routing_metrics(pairs: Iterable[tuple[OverlapLabel, Route]]) -> dict[str, object]:

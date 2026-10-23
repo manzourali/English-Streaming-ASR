@@ -34,3 +34,16 @@ def test_record_roundtrip_benchmark_and_programmatic_tables(tmp_path):
     assert benchmarks[0].rtf == pytest.approx(0.5)
     assert "candidate" in main_results_table(summaries, ["base", "candidate", "missing"])
     assert "NOT MEASURED" in computational_table(benchmarks, ["base", "missing"])
+
+
+def test_mixed_and_incomplete_counts_are_rejected():
+    evaluator = Evaluator(10)
+    with pytest.raises(ValueError, match="aggregation"):
+        evaluator.summarize([_record("s", "a", .5, errors=5, units=10), _record("s", "b", .5)])
+    with pytest.raises(ValueError, match="aggregation"):
+        evaluator.summarize([_record("s", "a", .5, errors=5)])
+
+
+def test_zero_reference_insertions_remain_in_corpus_numerator():
+    records = [_record("s", "a", .1, errors=1, units=10), _record("s", "b", 1, errors=2, units=0)]
+    assert Evaluator(10).summarize(records)[0].value == pytest.approx(.3)

@@ -22,10 +22,12 @@ def load_audio(path: str | Path) -> tuple[np.ndarray, AudioMetadata]:
         samples, sample_rate = sf.read(str(path), always_2d=False)
     except ImportError:
         with wave.open(str(path), "rb") as handle:
+            if handle.getsampwidth() != 2 or handle.getcomptype() != "NONE":
+                raise ValueError("The WAV fallback supports uncompressed PCM16 only")
             sample_rate = handle.getframerate()
             channels = handle.getnchannels()
             frames = handle.readframes(handle.getnframes())
-        samples = np.frombuffer(frames, dtype=np.int16).astype(np.float32) / 32768.0
+        samples = np.frombuffer(frames, dtype="<i2").astype(np.float32) / 32768.0
         if channels > 1:
             samples = samples.reshape(-1, channels)
     channels = 1 if np.asarray(samples).ndim == 1 else int(np.asarray(samples).shape[1])

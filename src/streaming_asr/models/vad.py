@@ -27,6 +27,7 @@ class VADResult:
     end_time: float = 0.0
     frame_count: int = 0
     segment: SpeechSegment | None = None
+    completed_segments: tuple[SpeechSegment, ...] = ()
 
     @property
     def is_speech(self) -> bool:
@@ -47,16 +48,23 @@ class VADState:
 
 
 class StreamingVAD(ABC):
-    def __init__(self) -> None:
+    def __init__(self, minimum_silence_ms: int = 300) -> None:
+        if minimum_silence_ms < 0:
+            raise ValueError("minimum_silence_ms must be non-negative")
+        self.minimum_silence = minimum_silence_ms / 1000
+        self._endpoint_silence = 0.0
         self.state = VADState()
 
     def start(self) -> None:
         self.state = VADState(started=True)
+        self._endpoint_silence = 0.0
 
     @abstractmethod
     def process(self, audio_chunk: AudioChunk) -> VADResult: ...
 
     def finalize(self) -> SpeechSegment | None:
+        if self.state.finalized:
+            return None
         self.state.finalized = True
         if self.state.current_segment_start is None or self.state.current_segment_end is None:
             return None
@@ -71,26 +79,32 @@ class StreamingVAD(ABC):
     def _update_state(self, speech: bool, probability: float | None, start: float, end: float, chunk_index: int) -> VADResult:
         self._ensure_started()
         duration = max(0.0, end - start)
+        completed = ()
         if speech:
-            if not self.state.previous_decision:
+            self._endpoint_silence = 0.0
+            if self.state.current_segment_start is None:
                 self.state.current_segment_start = start
             self.state.current_segment_end = end
             self.state.speech_duration += duration
         else:
             self.state.silence_duration += duration
+            self._endpoint_silence += duration
+            if self.state.current_segment_start is not None and self._endpoint_silence + 1e-9 >= self.minimum_silence:
+                completed = (SpeechSegment(self.state.current_segment_start, self.state.current_segment_end, self.state.speech_probability),)
+                self.state.current_segment_start = self.state.current_segment_end = None
         self.state.previous_decision = speech
         self.state.speech_probability = probability
         self.state.processed_chunks += 1
         segment = None
         if self.state.current_segment_start is not None and self.state.current_segment_end is not None:
             segment = SpeechSegment(self.state.current_segment_start, self.state.current_segment_end, probability)
-        return VADResult(speech, probability, chunk_index, start, end, 1, segment)
+        return VADResult(speech, probability, chunk_index, start, end, 1, segment, completed)
 
 
 class DummyVAD(StreamingVAD):
     """Deterministic energy VAD for tests only; not an accuracy benchmark."""
-    def __init__(self, threshold: float = 1e-4):
-        super().__init__()
+    def __init__(self, threshold: float = 1e-4, minimum_silence_ms: int = 300):
+        super().__init__(minimum_silence_ms)
         if threshold < 0:
             raise ValueError("threshold must be non-negative")
         self.threshold = threshold
@@ -110,8 +124,8 @@ class WebRTCVADBackend(StreamingVAD):
     Therefore `probability` is 1.0/0.0 as a decision score, not a confidence
     estimate. Supported frame durations are 10, 20, and 30 ms.
     """
-    def __init__(self, sample_rate: int = 16000, frame_ms: int = 30, aggressiveness: int = 2):
-        super().__init__()
+    def __init__(self, sample_rate: int = 16000, frame_ms: int = 30, aggressiveness: int = 2, minimum_silence_ms: int = 300):
+        super().__init__(minimum_silence_ms)
         if sample_rate not in {8000, 16000, 32000, 48000}:
             raise ValueError("WebRTC VAD sample_rate must be 8000, 16000, 32000, or 48000 Hz")
         if frame_ms not in {10, 20, 30}:
@@ -143,24 +157,25 @@ class WebRTCVADBackend(StreamingVAD):
         if self._buffer.size == 0:
             self._buffer_start = audio_chunk.start_time
         self._buffer = np.concatenate((self._buffer, np.asarray(audio_chunk.samples, dtype=np.float32)))
-        decisions: list[bool] = []
+        decisions, completed = [], []
+        result = None
         while len(self._buffer) >= self.frame_samples:
             frame = np.clip(self._buffer[:self.frame_samples], -1.0, 1.0)
-            pcm = (frame * 32767.0).astype(np.int16).tobytes()
-            decisions.append(bool(self._vad.is_speech(pcm, self.sample_rate)))
-            self._buffer = self._buffer[self.frame_samples:]
-        frame_count = len(decisions)
-        if frame_count:
-            start = self._buffer_start
-            end = start + frame_count * self.frame_ms / 1000.0
-            self._buffer_start = end
-            speech = any(decisions)
-            probability = float(sum(decisions) / frame_count)
-        else:
-            start, end = audio_chunk.start_time, audio_chunk.end_time
-            speech, probability = self.state.previous_decision, self.state.speech_probability
-        result = self._update_state(speech, probability, start, end, audio_chunk.index)
-        return VADResult(result.speech, result.probability, result.chunk_index, result.start_time, result.end_time, frame_count, result.segment)
+            decision = bool(self._vad.is_speech((frame * 32767.0).astype("<i2").tobytes(), self.sample_rate))
+            decisions.append(decision)
+            start_sample = round(self._buffer_start * self.sample_rate)
+            end_sample = start_sample + self.frame_samples
+            result = self._update_state(decision, float(decision), start_sample / self.sample_rate,
+                                        end_sample / self.sample_rate, audio_chunk.index)
+            completed.extend(result.completed_segments)
+            self._buffer_start = end_sample / self.sample_rate
+            self._buffer = self._buffer[self.frame_samples:].copy()
+        if result is None:
+            return VADResult(self.state.previous_decision, self.state.speech_probability,
+                             audio_chunk.index, audio_chunk.start_time, audio_chunk.end_time, 0)
+        return VADResult(any(decisions), sum(decisions) / len(decisions), audio_chunk.index,
+                         result.start_time - (len(decisions) - 1) * self.frame_ms / 1000,
+                         result.end_time, len(decisions), result.segment, tuple(completed))
 
     def finalize(self) -> SpeechSegment | None:
         if self.state.finalized:
@@ -169,15 +184,18 @@ class WebRTCVADBackend(StreamingVAD):
             frame = np.pad(self._buffer, (0, self.frame_samples - len(self._buffer)))
             pcm = np.clip(frame, -1.0, 1.0).astype(np.float32)
             decision = bool(self._vad.is_speech((pcm * 32767.0).astype(np.int16).tobytes(), self.sample_rate))
-            self._update_state(decision, float(decision), self._buffer_start, self._buffer_start + len(self._buffer) / self.sample_rate, self.state.processed_chunks)
+            tail = self._update_state(decision, float(decision), self._buffer_start, self._buffer_start + len(self._buffer) / self.sample_rate, self.state.processed_chunks)
             self._buffer = np.empty(0, dtype=np.float32)
+            if tail.completed_segments:
+                self.state.finalized = True
+                return tail.completed_segments[-1]
         return super().finalize()
 
 
 def get_vad_backend(name: str, config: dict[str, Any] | None = None) -> StreamingVAD:
     config = config or {}
     if name.lower() in {"webrtc", "webrtcvad", "webrtc_vad"}:
-        return WebRTCVADBackend(sample_rate=int(config.get("sample_rate", 16000)), frame_ms=int(config.get("frame_ms", 30)), aggressiveness=int(config.get("aggressiveness", 2)))
+        return WebRTCVADBackend(sample_rate=int(config.get("sample_rate", 16000)), frame_ms=int(config.get("frame_ms", 30)), aggressiveness=int(config.get("aggressiveness", 2)), minimum_silence_ms=int(config.get("minimum_silence_ms", 300)))
     if name.lower() == "dummy":
-        return DummyVAD(float(config.get("threshold", 1e-4)))
+        return DummyVAD(float(config.get("threshold", 1e-4)), minimum_silence_ms=int(config.get("minimum_silence_ms", 300)))
     raise ValueError(f"Unknown VAD backend: {name}")
