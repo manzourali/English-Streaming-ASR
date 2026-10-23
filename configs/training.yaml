@@ -11,7 +11,7 @@ model:
   checkpoint: null
   strategy: no_project_local_finetuning
   # Must create ExternalSurtTrainingBackend from a pinned Icefall/SURT recipe.
-  # The Phase 7 inference decoder_factory is not a training backend.
+  # The native inference backend is not a training backend.
   backend_factory: null
   trainable_parameters: not_measured
 

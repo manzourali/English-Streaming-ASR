@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import sys
 import time
@@ -15,6 +16,7 @@ from streaming_asr.audio.loader import load_audio
 from streaming_asr.audio.stream import AudioStream
 from streaming_asr.datasets.manifests import read_overlap_manifest
 from streaming_asr.exceptions import BackendNotAvailableError
+from streaming_asr.evaluation.records import surt_prediction_record, write_evaluation_records
 from streaming_asr.metrics.asr import permutation_invariant_word_error_rate
 from streaming_asr.models.multitalker import SURT2StreamingASR
 from streaming_asr.utils.config import Config
@@ -103,6 +105,7 @@ def main() -> int:
     paths = ProjectPaths.from_config(config, ROOT)
     paths.ensure_output_dirs()
     run_dir, logger = create_run(values, paths.outputs)
+    manifest_sha256 = hashlib.sha256(manifest.read_bytes()).hexdigest()
     total_errors = total_words = 0
     rows = []
     for record in records:
@@ -112,6 +115,7 @@ def main() -> int:
         total_errors += metric.errors
         total_words += metric.reference_words
         row.update(mixture_id=record.mixture_id, regime=record.regime,
+                   overlap_ratio=record.overlap_ratio, relative_gain_db=record.relative_gain_db,
                    reference_streams=references, pi_wer=metric.wer,
                    errors=metric.errors, reference_words=metric.reference_words,
                    assignment=metric.assignment)
@@ -130,11 +134,19 @@ def main() -> int:
                        "Available-sample timestamps measure acquisition; endpoint delay is additional.",
     }
     prediction_path = paths.outputs / "predictions" / f"{run_dir.name}_multitalker.jsonl"
+    evaluation_path = paths.outputs / "predictions" / f"{run_dir.name}_evaluation_records.jsonl"
+    write_evaluation_records([surt_prediction_record(row,
+        system=values["experiment"].get("system", "surt_base"),
+        dataset=values["data"].get("dataset_id", "synthetic_overlap"),
+        split=records[index].split, checkpoint=model_config.get("checkpoint"),
+        manifest_sha256=manifest_sha256)
+        for index, row in enumerate(rows)], evaluation_path)
     prediction_path.write_text("".join(json.dumps(row) + "\n" for row in rows), encoding="utf-8")
     (paths.outputs / "metrics" / f"{run_dir.name}_multitalker.json").write_text(
         json.dumps(metrics, indent=2), encoding="utf-8")
     logger.info("Completed %d continuous multi-talker recordings", len(rows))
-    print(json.dumps({"metrics": metrics, "predictions": str(prediction_path)}, indent=2))
+    print(json.dumps({"metrics": metrics, "predictions": str(prediction_path),
+                      "evaluation_records": str(evaluation_path)}, indent=2))
     return 0
 
 

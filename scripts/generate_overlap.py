@@ -68,6 +68,9 @@ def main() -> int:
         for split, source_split in source_splits.items():
             data_config = dict(config.get("data", {}))
             data_config["split"] = source_split
+            if data_config.get("backend") in {"local", "kaggle"}:
+                manifest_root = Path(data_config["manifest_root"])
+                data_config["path"] = str(manifest_root / f"{split}.jsonl")
             max_source = int(config.get("generation.max_source_samples", 20))
             data_config["max_samples"] = max_source
             sources[split] = [_source_from_example(example, output_root, sample_rate) for example in iter_librispeech(data_config)]
@@ -80,6 +83,13 @@ def main() -> int:
     errors.extend(check_speaker_disjointness(results))
     stats = {split: overlap_statistics(records) for split, records in results.items()}
     output_root.mkdir(parents=True, exist_ok=True)
+    provenance = {"data_kind": "synthetic_tones_fixture" if args.demo else "speech_mixtures",
+                  "source": config.get("data.dataset", "local_librispeech"), "seed": seed}
+    if not args.demo and config.get("data.manifest_root"):
+        preparation = Path(config.get("data.manifest_root")) / "preparation.json"
+        if preparation.is_file():
+            provenance["source_preparation"] = json.loads(preparation.read_text(encoding="utf-8"))
+    (output_root / "dataset_info.json").write_text(json.dumps(provenance, indent=2), encoding="utf-8")
     (output_root / "statistics.json").write_text(json.dumps(stats, indent=2), encoding="utf-8")
     summary = {"status": "success" if not errors else "failed", "output_root": str(output_root), "splits": stats, "validation_errors": errors}
     print(json.dumps(summary, indent=2))

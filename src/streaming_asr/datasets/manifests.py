@@ -63,15 +63,24 @@ def write_overlap_manifest(records: Iterable[OverlapRecord], path: str | Path) -
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", encoding="utf-8") as handle:
         for record in records:
-            handle.write(json.dumps(record.to_dict(), sort_keys=True) + "\n")
+            row = record.to_dict()
+            try:
+                row["audio_path"] = str(Path(row["audio_path"]).resolve().relative_to(path.resolve().parent.parent))
+            except ValueError:
+                pass
+            handle.write(json.dumps(row, sort_keys=True) + "\n")
 
 
 def read_overlap_manifest(path: str | Path) -> list[OverlapRecord]:
     records = []
-    for line in Path(path).read_text(encoding="utf-8").splitlines():
+    path = Path(path)
+    for line in path.read_text(encoding="utf-8").splitlines():
         if not line.strip():
             continue
         value = json.loads(line)
+        audio = Path(value["audio_path"])
+        if not audio.is_absolute():
+            value["audio_path"] = str((path.resolve().parent.parent / audio).resolve())
         value["sources"] = [OverlapSource(**source) for source in value["sources"]]
         records.append(OverlapRecord(**value))
     return records

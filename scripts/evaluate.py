@@ -44,7 +44,7 @@ def _freeze(values: dict) -> dict[str, object]:
 
 
 def _validate(values: dict) -> dict[str, object]:
-    required = {"git_commit", "vad_config", "osd_config", "routing_config", "training_config", "train_manifest", "validation_manifest", "test_manifest"}
+    required = {"git_commit", "streaming_config", "training_config", "train_manifest", "validation_manifest", "test_manifest"}
     missing = sorted(required - set(values.get("frozen_system", {})))
     if missing:
         raise ValueError("evaluation freeze is missing: " + ", ".join(missing))

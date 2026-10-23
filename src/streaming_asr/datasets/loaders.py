@@ -57,8 +57,13 @@ def iter_librispeech(config: dict[str, Any]) -> Iterator[LibriSpeechExample]:
     if isinstance(dataset, Path):
         from .manifests import read_manifest
         records = read_manifest(dataset) if dataset.is_file() else read_manifest(dataset / "manifest.jsonl")
+        max_samples = config.get("max_samples")
         for index, record in enumerate(records):
-            yield LibriSpeechExample(str(index), record.audio_path, record.transcript)
+            if max_samples is not None and index >= int(max_samples):
+                break
+            metadata = record.metadata or {}
+            yield LibriSpeechExample(str(metadata.get("source_id", index)), record.audio_path,
+                                    record.transcript, metadata.get("speaker_id"))
         return
     max_samples = config.get("max_samples")
     for index, row in enumerate(dataset):

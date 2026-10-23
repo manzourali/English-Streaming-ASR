@@ -1,28 +1,18 @@
-# Execution matrix
+# Current execution matrix
 
-Use this as the operational checklist. “Can skip?” means skip for a narrower experiment, not that the corresponding science is complete.
+| Entry point | Real requirement | Output | Status |
+| --- | --- | --- | --- |
+| `download_librispeech.py` | Internet and disk, or use attached data instead | Verified OpenSLR speech files | Implemented; network execution not tested locally |
+| `prepare_dataset.py` | Extracted local LibriSpeech transcripts/audio | Speaker-disjoint source manifests | Fixture-tested |
+| `generate_overlap.py` | Real source manifests or explicit tone demo | Portable two-source mixtures, labels, provenance | Tested |
+| `check_surt_assets.py` | Optional native export directory | Missing/incompatible/present/smoke status | Structure checks tested; real GPU probe pending |
+| `run_multitalker.py` / `run_streaming.py` | Trained native exports and matching features/tokenizer | Transcripts, raw metrics, EvaluationRecord JSONL | Scheduler/schema tested; real model execution pending |
+| `train_asr.py --validate-only` | Split manifests | HEAT target/leakage validation | Tested |
+| `train_asr.py` | Actual ExternalSurtTrainingBackend | Trained checkpoints and trainer metadata | Integration missing |
+| Native exporter | Pinned recipe, checkpoint and exact streaming state implementation | Streaming export bundle | Not implemented |
+| `evaluate.py` / `benchmark.py` | Actual EvaluationRecord JSONL | Aggregation and compute report | Handoff tested |
+| `run_baseline.py` | Optional compatible WhisperRT runtime, weights and clean audio | Independent baseline result | Actual model execution pending |
 
-| Step | Phase | Notebook / script | Dataset | Model | GPU? | Input | Output | Can skip? |
-| ---: | ---: | --- | --- | --- | --- | --- | --- | --- |
-| 1 | 0 | `scripts/check_environment.py` | None | None | No | Installed package | Environment report | No |
-| 2 | 0 | `scripts/smoke_test.py --phase 0` / notebook 00 | None | Dummy components | No | `configs/base.yaml` | Small run/validation record | No |
-| 3 | 3 | `scripts/generate_overlap.py --demo` / notebook 04 | Built-in fixtures | None | No | `configs/overlap_dataset.yaml` | `outputs/synthetic_overlap/` | No for overlap phases |
-| 4 | 2 | `scripts/run_vad.py` / notebook 03 | Synthetic demo or WAV | WebRTC VAD | No | VAD config | Metrics/run record | Yes for clean-only baseline |
-| 5 | 5 | `scripts/evaluate_osd.py` / notebook 06 | Phase 3 manifest | Heuristic OSD | No | `outputs/synthetic_overlap/` | OSD JSONL/metrics/report | Yes for Phase 4 only |
-| 6 | 1 | `scripts/run_streaming.py --max-samples 1` / notebook 02 | LibriSpeech | WhisperRT | Recommended | Hub/cache plus config | Predictions/metrics/report | No for real ASR path |
-| 7 | 4 | `scripts/run_overlap_baseline.py --max-samples 1` / notebook 05 | Phase 3 manifest | WhisperRT | Recommended | Manifest + WhisperRT | Phase 4 metrics/report | Yes for clean baseline only |
-| 8 | 6 | `scripts/run_adaptive.py --max-samples 1` / notebook 07 | Phase 3 manifest | WhisperRT, optional VAD/OSD | Recommended | Manifest + valid ASR runtime | Routing traces/metrics/report | Yes unless studying routing |
-| 9 | 7 | `scripts/run_multitalker.py` / notebook 08 | Phase 3 manifest | External SURT | Likely | Private override/factory/checkpoint | Multi-stream records/PI-WER | Yes until SURT is available |
-| 10 | 8 | `scripts/train_asr.py --validate-only` / notebook 09 | Phase 3 split manifests | External trainable SURT | Likely | Private backend override | Validation or external checkpoints | Yes; required only for fine-tuning |
-| 11 | 9 | `scripts/evaluate.py` + `scripts/benchmark.py` / notebook 10 | Saved prediction records | None | No | Frozen config/JSONL records | Final aggregate reports | No for final claims |
-
-## Minimum commands for the first session
-
-```bash
-!python scripts/check_environment.py
-!python scripts/smoke_test.py --phase 0 --config configs/base.yaml
-!python scripts/generate_overlap.py --config configs/overlap_dataset.yaml --demo
-!python scripts/evaluate_osd.py --config configs/overlap_detection.yaml --max-samples 4
-```
-
-Only after those succeed should you configure the external WhisperRT stack and begin Step 6.
+Full training needs a scalable recipe/DataLoader; the local trainer's eager
+batch materialization and epoch-level resume are not a full-scale training
+solution. No fixed Kaggle GPU/quota or k2 wheel combination is assumed.

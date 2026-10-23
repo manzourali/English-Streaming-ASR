@@ -1,346 +1,84 @@
 # English Streaming ASR with Overlapped Speech
 
-Current architecture: **continuous SURT 2.0 inference**, with 80-bin log-Mel
-features, dual-path masking, a shared streaming Zipformer and stateless RNN-T.
-The heuristic WhisperRT/SURT router and waveform-window pseudo-adapter have
-been removed. WhisperRT remains an independent benchmark command.
+The active research path is continuous SURT 2.0: mono 16 kHz PCM, 80-bin
+log-Mel features, dual-path masks, shared streaming Zipformer, and stateless
+RNN-T decoding. The heuristic WhisperRT/SURT router is retired.
 
-The scheduler and correctness fixes are locally tested. Recognition requires
-trained native streaming exports and a matching tokenizer; these assets are
-not bundled. PyTorch execution, real-corpus WER and real-model latency remain
-unverified in this checkout. See [stage2_report.md](docs/stages/stage2_report.md) for the
-current architecture, migration, complete backend contract and test evidence.
-The phase documents and notebooks below record the earlier research scaffold;
-their routing APIs and windowed inference instructions are historical.
+**Read the [Persian Kaggle workflow](docs/KAGGLE_WORKFLOW_FA.md) first.** It
+explains every component, notebook, input/output artifact and remaining gap.
 
-## Architecture
+## Current capability
 
-```text
-16 kHz mono PCM -> 80-bin log-Mel -> dual-path masks -> two feature channels
-  -> shared streaming Zipformer -> optional channel-tying LSTM
-  -> shared stateless predictor + RNN-T joiner -> channel text/endpoint events
-```
+Data preparation, controlled two-source speech mixtures, bounded streaming
+scheduling, endpoint logic and PI-WER evaluation are implemented and tested.
+Actual recognition still requires a validated native streaming model export.
+The official pretrained checkpoint is downloadable, but the recipe-specific
+native connection/exporter and actual training backend are not supplied.
+Downloading weights or enabling a GPU does not implement those missing pieces.
+No trained-model accuracy, GPU latency or full training reproduction is claimed.
 
-Every audio sample, including silence, follows the same model. Model calls
-advance 32 frames (320 ms); acoustic caches and feature buffers are bounded.
-Channel numbers describe output channels, not permanent speaker identities.
+## Kaggle notebook order
 
-```bash
-python3 -m pip install -e ".[dev]"
-pytest -q
-# After supplying trained exports and a model.backend_factory override:
-python3 scripts/run_streaming.py --audio meeting.wav --override surt_override.yaml
-# Independent historical single-speaker baseline:
-python3 scripts/run_baseline.py --config configs/whisperrt_baseline.yaml
-```
-
-## Repository
-
-- `src/streaming_asr/`: importable library using a `src/` layout.
-- `configs/`: YAML configurations; `base.yaml` and `kaggle.yaml` are usable in Phase 0.
-- `scripts/`: environment check and smoke test plus future-phase entry points.
-- `tests/`: lightweight lifecycle and metric tests.
-- `notebooks/`: phase notebooks; `00_environment.ipynb` covers Phase 0.
-- `docs/`: architecture, dataset, experiment, and thesis mapping notes.
-- `data/`, `checkpoints/`, `outputs/`: runtime locations; generated data and weights are not committed.
-
-## Current status by phase
-
-| Phase | What is implemented | What is actually measured |
+| Order | Notebook | Purpose |
 | --- | --- | --- |
-| 0 | Project structure, configs, streaming contracts, smoke tests | Infrastructure smoke tests pass |
-| 1 | WhisperRT causal streaming adapter and clean-speech runner | Real WER/RTF/latency: **NOT MEASURED**; required model stack was unavailable |
-| 2 | Streaming WebRTC VAD with fixed-frame buffering | Synthetic integration timing only; VAD accuracy: **NOT MEASURED** |
-| 3 | Deterministic two-speaker overlap generator, manifests, validation | 12 local demo mixtures generated and validated; real LibriSpeech generation not run |
-| 4 | Single-stream WhisperRT overlap baseline and honest WER policy | Manifest validation passed; real WhisperRT overlap results: **NOT MEASURED** |
-| 5 | Independent causal heuristic OSD, timing alignment, metrics, evaluator | Demo: precision 1.000, recall 0.636, F1 0.778, 15 ms mean delay, 0.00274 RTF |
-| 6 | Historical routing experiment; execution replaced by continuous SURT in stage2 | Retired |
-| 7 | Native SURT scheduler and structured PyTorch composition; see stage2 report | Real ASR remains unmeasured without trained exports |
-| 8 | Training-manifest/HEAT target preparation, leakage checks, collator, checkpoint lifecycle, external-training contract | **TRAINING NOT TECHNICALLY SUPPORTED** locally: no pinned Icefall recipe/trainable checkpoint/tokenizer/backend factory |
-| 9 | Frozen evaluation protocol, per-example result schema, aggregate/stratified analysis, uncertainty, benchmark/report generation | **NOT MEASURED**: no verified final checkpoints, test manifest, or execution hardware available |
-| 10 | Environment/artifact audit, provenance hashes, reproducibility levels, final specification, claims/thesis/future-work documentation | Code and protocol **VERIFIED**; full research result reproduction **NOT REPRODUCED** |
+| 1 | [english-streaming-asr.ipynb](english-streaming-asr.ipynb) | Clone source, verify environment, download/attach real LibriSpeech, create and save mixtures |
+| 2 | [12_surt_streaming_inference.ipynb](notebooks/12_surt_streaming_inference.ipynb) | Download official base weights, report native-export readiness, run actual inference when a compatible export exists |
+| 3, optional | [13_surt_training_evaluation.ipynb](notebooks/13_surt_training_evaluation.ipynb) | Validate training data; train only after a real external backend is integrated |
+| 2 again | Notebook 12 | Run a validated export of the fine-tuned checkpoint with a distinct system label |
+| 4 | [14_surt_evaluation.ipynb](notebooks/14_surt_evaluation.ipynb) | Compare complete, identical test sets using generated EvaluationRecord files |
+| Optional comparison | [11_whisperrt_baseline.ipynb](notebooks/11_whisperrt_baseline.ipynb) | Independent WhisperRT baseline; not a SURT prerequisite |
 
-The main research gap is therefore the real WhisperRT/LibriSpeech execution. Phases 1 and 4 are implemented, but their model/data benchmarks still need to run in an environment with PyTorch, the verified WhisperRT package, model weights, and dataset access. Phase 5 is a transparent spectral baseline, not a pretrained neural OSD result. See [`docs/phase_reports/`](docs/phase_reports/) for the evidence and limitations of every phase.
+Every notebook includes its own setup for a fresh Kaggle session. Save outputs
+under `/kaggle/working/asr_artifacts`; attach a previous version through Add
+Input and set the exact input paths shown by Kaggle. Source changes must be
+published to your GitHub repository before a Kaggle clone can see them.
+Notebook 00–10 duplicates and the old adaptive notebook have been removed.
 
-## Practical execution and Kaggle
+## Datasets and metrics
 
-Use the current `master` HEAD; do **not** reset to an earlier phase merely to run it. The repository contains all phase code, but full end-to-end empirical results remain pending external WhisperRT/SURT runtimes, checkpoints, and persistent manifests.
+The default pilot downloads real `dev-clean` and partitions its speakers into
+three development groups. This is not an official test-clean benchmark.
+The standard layout uses train-clean-100, dev-clean and test-clean. Source
+limits and mixture counts are explicit; a small pilot is not paper-scale
+training. The `--demo` generator uses tones with fabricated labels and is
+reserved for infrastructure tests.
 
-From a fresh Kaggle notebook, enable Internet, then run:
+Mixture audio paths are stored relative to their dataset bundle, so saved
+Kaggle outputs can be attached under a new input directory. Native inference
+writes both transcript JSONL and `*_evaluation_records.jsonl`; no manual
+schema conversion is needed for `evaluate.py`.
 
-```bash
-!git clone https://github.com/manzourali/English-Streaming-ASR.git
-```
+PI-WER is implemented for short two-source mixtures. The official LibriCSS
+continuous-conversation protocol uses ORC-WER; a LibriCSS/meeteval integration
+is a separate remaining task. File-processing RTF is not live microphone
+latency. VAD/OSD scripts remain independent diagnostic baselines, outside the
+continuous SURT recognition path.
 
-```python
-%cd /kaggle/working/English-Streaming-ASR
-```
+## Local verification
 
-```bash
-!python -m pip install -q -r requirements.txt
-!python -m pip install -q -e ".[audio,phase1,phase2]"
-!python scripts/check_environment.py
-!python scripts/smoke_test.py --phase 0 --config configs/base.yaml
-```
-
-Run `notebooks/00_environment.ipynb` first if you want a notebook view of the smoke path. Skip `notebooks/01_dataset_validation.ipynb`: it is an intentional placeholder; dataset loading and overlap-manifest validation already live in project scripts. Then run the deterministic Phase 3 demo before downloading a model:
-
-```bash
-!python scripts/generate_overlap.py --config configs/overlap_dataset.yaml --demo
-!python scripts/evaluate_osd.py --config configs/overlap_detection.yaml --max-samples 4
-```
-
-For the full, beginner-oriented Kaggle workflow, asset setup, notebook order, checkpoint persistence, and blocking external requirements, see [`docs/TUTORIAL_KAGGLE.md`](docs/TUTORIAL_KAGGLE.md). Use [`docs/KAGGLE_NOTEBOOK_GUIDE.md`](docs/KAGGLE_NOTEBOOK_GUIDE.md), [`docs/phase_dependency_map.md`](docs/phase_dependency_map.md), and [`docs/execution_matrix.md`](docs/execution_matrix.md) as the execution map.
-
-### Dataset, model, and checkpoint strategy
-
-- Download public LibriSpeech (`openslr/librispeech_asr`) only when running a real baseline or non-demo overlap generation; persist generated Phase 3 manifests/audio as a private Kaggle Dataset for later phases.
-- The configured WhisperRT checkpoint is `MLSpeech/WhisperRT-Streaming` / `small_300.pt`. Its separate official runtime (`whisper_rt` module), PyTorch, and Hub authentication/access must be verified before Phase 1. The repository does not bundle them.
-- Phase 7/8 need a version-pinned external SURT/Icefall decoder or training backend; this code intentionally does not substitute WhisperRT for a multi-talker model.
-- Persist exact config overrides, input manifests, prediction JSONL, metrics/reports, model/adapter weights, and—in training—optimizer, scheduler, trainer, epoch/step, random, and tokenizer states before a Kaggle session ends.
-
-### Current limitations
-
-The current checkout can run its infrastructure, VAD, synthetic overlap, heuristic OSD, and validation workflows. It cannot yet substantiate a final end-to-end multi-talker ASR claim because no verified real WhisperRT benchmark, SURT decoder/checkpoint, SURT training backend/checkpoint, or final comparable evaluation records are committed. See [`docs/final_system_specification.md`](docs/final_system_specification.md) for the frozen technical status.
-
-## Installation
-
-Python 3.10+ is supported; Python 3.10 is the documented Conda target. From the repository root:
+Heavy processing belongs on Kaggle. The following only checks code and small
+fixtures and does not need a GPU:
 
 ```bash
-python -m venv .venv
-source .venv/bin/activate
-python -m pip install -r requirements.txt
-```
-
-The base installation is deliberately lightweight. PyTorch, Hugging Face `datasets`, and the official WhisperRT dependency stack are optional because the repository can run its infrastructure, VAD, synthetic-data, and heuristic OSD checks without them.
-
-## Phase 8 — Training feasibility
-
-The selected SURT 2.0 family has official external Icefall recipes, but the Phase 7 project adapter exposes inference only. Phase 8 therefore implements a strict feasibility bridge: Phase 3 manifest-to-HEAT-channel targets, split-leakage validation, variable-length collation, checkpoint/resume lifecycle, finite-loss detection, and a version-pinned `ExternalSurtTrainingBackend` contract. It does **not** invent a Transformers/PEFT training procedure.
-
-```bash
-python3 scripts/smoke_test.py --phase 8 --config configs/training.yaml
-python3 scripts/train_asr.py --config configs/training.yaml --validate-only
-```
-
-The smoke path is model-free. A real training command additionally requires a valid Phase 3 train/validation/test manifest and an override whose `model.backend_factory` wraps one exact, verified Icefall/SURT recipe. Until then, the correct status is **TRAINING NOT TECHNICALLY SUPPORTED**, not a reported fine-tuning result. See [model compatibility](docs/training_model_compatibility.md), [target objective](docs/training_objective.md), and [the Phase 8 report](docs/phase_reports/phase_8_report.md).
-
-## Phase 9 — Evaluation protocol
-
-Phase 9 freezes the experimental protocol without changing the system architecture. [`configs/evaluation.yaml`](configs/evaluation.yaml) records the intended checkpoints/configurations/manifests, primary and oracle systems, test-set protection, and six-row ablation plan. [`scripts/evaluate.py`](scripts/evaluate.py) ingests real per-example JSONL records and generates aggregate results, overlap/temporal stratifications, deterministic bootstrap intervals, error taxonomy, computational tables, and a Markdown report. It refuses invalid paired improvement claims when sample sets or metric directions differ.
-
-```bash
-python3 scripts/evaluate.py --config configs/evaluation.yaml --validate-only
-python3 scripts/smoke_test.py --phase 9 --config configs/evaluation.yaml
-# After real runs:
-python3 scripts/evaluate.py --config configs/evaluation.yaml --records outputs/predictions/final_records.jsonl
-python3 scripts/benchmark.py --records outputs/predictions/final_records.jsonl
-```
-
-The current configuration is a protocol freeze, not a measured final-system freeze: model checkpoints remain unset and all Phase 9 scientific outcomes are **NOT MEASURED**. See [the Phase 9 report](docs/phase_reports/phase_9_report.md).
-
-## Final reproduction and research status
-
-The final artifact distinguishes code/protocol verification from empirical reproduction. Use the single entry point:
-
-```bash
-python3 scripts/reproduce.py --level code   # environment + unit tests
-python3 scripts/reproduce.py --level small  # adds model-free Phase 8/9 smoke and artifact audit
-python3 scripts/reproduce.py --level full   # requires final checkpoints, manifests, and per-example records
-```
-
-`code` and `small` are the only levels verified in this checkout. `full` intentionally exits with **NOT REPRODUCED** until external WhisperRT/SURT assets and final record files are present. The final system specification, provenance workflow, research answers, claims audit, limitations, and future work are in [docs](docs/). Start with [the reproducibility guide](docs/reproducibility.md) and [final system specification](docs/final_system_specification.md).
-
-## Citation
-
-Use [CITATION.cff](CITATION.cff) when citing this artifact. Do not cite it as evidence of measured end-to-end ASR, routing, multi-talker, or fine-tuning improvements unless the separately archived final result records and frozen external assets are available.
-
-## Configuration and Kaggle
-
-All runs use YAML. Nested values are available through dotted keys and a second YAML file can be merged with `--override`. Local outputs use `data/`, `outputs/`, and `checkpoints/`. In Kaggle, `/kaggle/input` is treated as read-only and generated artifacts go to `/kaggle/working/`.
-
-Kaggle Internet ON may be used by later phases for Hugging Face access. Internet OFF is supported when prepared data/model artifacts are attached as Kaggle inputs. The generic [`configs/kaggle.yaml`](configs/kaggle.yaml) is intended for infrastructure/path checks; for phase experiments use [`configs/kaggle_paths.yaml`](configs/kaggle_paths.yaml), which preserves Hugging Face loading while moving generated artifacts and manifests to `/kaggle/working/`.
-
-### Kaggle setup
-
-1. Create a Kaggle Notebook with Internet enabled if you need Hugging Face or WhisperRT downloads, select a GPU accelerator for WhisperRT, and add this repository as a Kaggle Dataset or clone it into `/kaggle/working/English-Streaming-ASR`.
-2. In the first cell, install the base and optional dependencies:
-
-   ```bash
-   %cd /kaggle/working/English-Streaming-ASR
-   !pip install -q -r requirements.txt webrtcvad-wheels datasets huggingface_hub
-   !python scripts/check_environment.py
-   ```
-
-3. Run the model-free regression checks first:
-
-   ```bash
-   !python -m pytest -q
-   !python scripts/smoke_test.py --config configs/kaggle.yaml
-   ```
-
-4. Run Phase 2 VAD on the synthetic demo:
-
-   ```bash
-   !python scripts/run_vad.py --config configs/streaming_vad.yaml --override configs/kaggle_paths.yaml
-   !python scripts/smoke_test.py --phase 2 --real-vad --config configs/streaming_vad.yaml
-   ```
-
-5. Generate the deterministic Phase 3 development set and evaluate Phase 5 OSD:
-
-   ```bash
-   !python scripts/generate_overlap.py --config configs/overlap_dataset.yaml --override configs/kaggle_paths.yaml --demo
-   !python scripts/evaluate_osd.py --config configs/overlap_detection.yaml --override configs/kaggle_paths.yaml
-   !python scripts/smoke_test.py --phase 5 --validate-osd --config configs/overlap_detection.yaml --override configs/kaggle_paths.yaml
-   ```
-
-   The generated WAV files, manifests, metrics, and reports will be under `/kaggle/working/outputs/` and can be saved as Kaggle Notebook outputs or published as a new Dataset version.
-
-6. Run Phase 1 clean-speech WhisperRT with a small sample count before attempting a full benchmark. The exact upstream WhisperRT package and model-loading dependencies must be installed according to the verified WhisperRT project used by this adapter:
-
-   ```bash
-   !python scripts/run_streaming.py --config configs/whisperrt_baseline.yaml --override configs/kaggle_paths.yaml --max-samples 1
-   ```
-
-   If the upstream package/model is not installed or cannot be downloaded, the command should stop with a dependency error; do not substitute offline Whisper and do not report fabricated WER.
-
-7. After Phase 3 data and a successful Phase 1 model smoke run, validate Phase 4 without inference, then run the real baseline:
-
-   ```bash
-   !python scripts/run_overlap_baseline.py --config configs/overlap_baseline.yaml --override configs/kaggle_paths.yaml --validate-only
-   !python scripts/run_overlap_baseline.py --config configs/overlap_baseline.yaml --override configs/kaggle_paths.yaml --max-samples 1
-   ```
-
-   For a full experiment, remove `--max-samples` only after the one-sample run succeeds. Phase 4 intentionally marks ordinary WER for overlapping mixtures as `NOT_MEASURED` because one transcript stream has no justified speaker assignment.
-
-8. Run Phase 6 routing controls only after the synthetic manifest and WhisperRT model configuration are available:
-
-   ```bash
-   !python scripts/run_adaptive.py --config configs/adaptive.yaml --override configs/kaggle_paths.yaml --validate-only
-   !python scripts/run_adaptive.py --config configs/adaptive.yaml --override configs/kaggle_paths.yaml --max-samples 1
-   ```
-
-   The runner writes separate always-normal, **ORACLE ROUTING — NOT A DEPLOYABLE SYSTEM**, and predicted-OSD artifacts. The default Phase 6 overlap route deliberately shares WhisperRT with the normal route, so it measures routing correctness, transition behavior, and overhead—not overlap-recognition improvement.
-
-#### Kaggle data modes
-
-- **Internet ON / Hugging Face mode:** use the commands above. Keep the phase config's `data.backend: huggingface`; `kaggle_paths.yaml` only changes paths.
-- **Attached-input mode:** attach prepared WAV/manifests/model files under `/kaggle/input` and create a project-specific override with the exact input paths. The current `KaggleDatasetBackend` expects a prepared local manifest layout; it does not automatically discover arbitrary Kaggle Dataset folder names.
-- **Model artifacts:** model files and the official WhisperRT package are not bundled in this repository. Attach or download them according to the upstream project, verify the model filename/configuration, and record the resolved config and hardware in the generated report.
-
-All generated outputs should remain in `/kaggle/working`; `/kaggle/input` is read-only. Before claiming a benchmark, save the JSON metrics, JSONL predictions/manifests, resolved configuration, logs, and Markdown report from `/kaggle/working/outputs/`.
-
-## Validation
-
-```bash
-python scripts/check_environment.py
-python scripts/smoke_test.py --config configs/base.yaml
-python scripts/smoke_test.py --config configs/kaggle.yaml
+python3 -m pip install -e ".[dev,audio]"
 pytest -q
+python3 scripts/validate_notebooks.py
+python3 -m compileall -q src scripts
 ```
 
-The smoke test creates deterministic synthetic audio, chunks it, runs the streaming engine and dummy components, finalizes state, and writes machine-readable run metadata. It downloads no models or datasets and reports no fabricated metrics.
+Kaggle setup uses `.[kaggle,dev]` and preserves the platform's PyTorch/CUDA
+installation. Do not install arbitrary k2/CUDA wheels without matching the
+actual pinned recipe and environment.
 
-## Roadmap
+## Reference documents
 
-Phase 0 — Infrastructure; Phase 1 — WhisperRT streaming baseline; Phase 2 — Streaming VAD; Phase 3 — Synthetic overlap generation; Phase 4 — Overlap benchmark; Phase 5 — OSD; Phase 6 — Adaptive routing; Phase 7 — Multi-talker/overlap-aware ASR; Phase 8 — Training/PEFT; Phase 9 — Evaluation/ablation; Phase 10 — Reproducibility/thesis experiments.
+- [Current Persian execution guide](docs/KAGGLE_WORKFLOW_FA.md)
+- [Stage2 architecture and B1–B8 report](docs/stages/stage2_report.md)
+- [Current dependency map](docs/phase_dependency_map.md)
+- [Current execution matrix](docs/execution_matrix.md)
+- [Historical phase reports](docs/phase_reports/)
 
-## Phase 1 — WhisperRT Streaming Baseline
-
-Phase 1 adds the verified `whisper_rt` causal streaming adapter for `MLSpeech/WhisperRT-Streaming`. The adapter uses the upstream `StreamingWhisper.reset`, `SpectrogramStream`, and repeated `decode` calls, preserving model state across chunks. It does not use offline Whisper and has no fallback model. The clean-speech benchmark is configured for LibriSpeech `test-clean` through the Hugging Face `openslr/librispeech_asr` dataset (`clean`/`test` internally), with a configurable 300 ms chunk and batch size one.
-
-Install the optional Phase 1 stack according to the upstream WhisperRT project (PyTorch, `huggingface_hub`, the official `WhisperRT-Streaming` repository/package, and `datasets`), then run:
-
-```bash
-python3 scripts/run_streaming.py --config configs/whisperrt_baseline.yaml --max-samples 1
-```
-
-The run saves JSONL predictions, JSON metrics, a Markdown report, and the resolved configuration under `outputs/`. It requires model/data access and is intentionally separate from the lightweight Phase 0 smoke test. Phase 1 measures clean single-speaker speech only; it does not establish overlap robustness and does not implement VAD, OSD, routing, or multi-talker recognition.
-
-## Phase 2 — Streaming VAD
-
-Phase 2 adds a stateful WebRTC VAD backend. WebRTC VAD consumes 16 kHz mono PCM in fixed 10/20/30 ms frames; the project buffers those frames internally while accepting configurable ASR chunks. Its binary decision is exposed as speech/non-speech with a 0/1 decision score, not a calibrated probability. Install `webrtcvad-wheels` and run the explicit demo with:
-
-```bash
-python3 scripts/run_vad.py --config configs/streaming_vad.yaml
-python3 scripts/smoke_test.py --phase 2 --real-vad --config configs/streaming_vad.yaml
-```
-
-The selected integration design observes audio with VAD while forwarding the continuous audio stream to WhisperRT, preserving ASR context. This makes VAD overhead and decisions measurable without silently changing the Phase 1 input. Phase 2 does not perform overlap detection.
-
-## Phase 3 — Synthetic Overlap Dataset Generation
-
-Phase 3 generates deterministic two-speaker mixtures from clean source utterances. Each JSONL record stores source IDs, speaker IDs, transcripts, source timing, overlap interval, overlap duration/ratio, relative gain, split, and mixture audio path. The overlap ratio is `overlap_duration / shorter_source_duration`; source RMS normalization is applied before relative gain, followed by common peak headroom scaling.
-
-Run the small no-download development dataset with:
-
-```bash
-python3 scripts/generate_overlap.py --config configs/overlap_dataset.yaml --demo
-```
-
-Configured LibriSpeech/Hugging Face or local/Kaggle generation uses the same dataset backend and must be run explicitly. Outputs are written under `outputs/synthetic_overlap/` and ignored by Git. Synthetic overlap provides controlled ground truth and is not a substitute for real conversational overlap datasets.
-
-## Phase 4 — WhisperRT Under Synthetic Overlap Baseline
-
-Phase 4 evaluates the existing single-stream WhisperRT pipeline directly on Phase 3 mixtures. It does not add OSD, separation, multi-talker decoding, overlap prompts, or optimization. For non-overlap controls, WER uses time-ordered concatenated source transcripts. For overlapping mixtures, source references and metadata are retained but ordinary WER is `NOT_MEASURED` because a single transcript stream has no justified speaker assignment.
-
-```bash
-python3 scripts/run_overlap_baseline.py --config configs/overlap_baseline.yaml --validate-only
-```
-
-The real benchmark requires the Phase 1 WhisperRT dependencies and model. Phase 4 artifacts are stored under `outputs/phase4/`.
-
-## Research integrity
-
-Placeholders are explicitly labeled. Unmeasured values remain unmeasured, no benchmark result is fabricated, and research decisions are deferred until the relevant phase and evidence exist.
-
-## Phase 5 — Streaming Overlap Speech Detection
-
-Phase 5 adds an independent streaming OSD interface with `NO_SPEECH`, `SINGLE_SPEAKER`, and `OVERLAP` states. The selected candidate is a causal, dependency-free spectral-peak heuristic (`heuristic` backend); it is an algorithmic baseline, not a pretrained neural model. It runs incrementally on fixed audio frames and does not modify WhisperRT, VAD, routing, diarization, or source separation.
-
-Run the reproducible development evaluation after generating the Phase 3 demo data:
-
-```bash
-python3 scripts/generate_overlap.py --config configs/overlap_dataset.yaml --demo
-python3 scripts/evaluate_osd.py --config configs/overlap_detection.yaml
-python3 scripts/smoke_test.py --phase 5 --validate-osd --config configs/overlap_detection.yaml
-```
-
-Metrics are scored against source-timing ground truth, with explicit midpoint alignment for frame-size differences. Reports include overlap precision/recall/F1, a three-class confusion matrix, event detection delay when measurable, and OSD RTF. Synthetic mixtures are controlled development data and do not establish real conversational-overlap performance.
-
-## Phase 6 — Adaptive Streaming ASR Routing
-
-`AdaptiveStreamingASRPipeline` orchestrates timestamped chunks as `VAD → OSD → RoutingPolicy → ASRBranch`. Its explicit state machine is `NO_SPEECH`, `SINGLE_SPEAKER`, and `OVERLAP`; the logical routes are `idle`, `normal`, and `overlap`. `RoutingPolicy` exposes the OSD threshold, enter/exit persistence frames, optional minimum overlap duration, VAD gating, idle behavior, history window, and deterministic normal-route fallback in [`configs/adaptive.yaml`](configs/adaptive.yaml).
-
-The mandatory controls are `always_normal`, `oracle`, and `predicted`. Oracle routing uses Phase 3 source timing and is marked non-deployable. Predicted routing uses the configured streaming OSD. The default overlap branch is the *same* WhisperRT instance as the normal branch: every live chunk is processed once, logical route changes do not reset WhisperRT, and rolling hypotheses remain owned by the single shared stream. This is a deliberate Phase 6 control, not a multi-talker recognizer. A future separate branch may receive configurable preceding context; replay output is suppressed to avoid duplicate user-visible text.
-
-Run after generating/pointing the config at a valid Phase 3 manifest and configuring model weights:
-
-```bash
-python3 scripts/run_adaptive.py --config configs/adaptive.yaml --validate-only
-python3 scripts/run_adaptive.py --config configs/adaptive.yaml --max-samples 1
-```
-
-The runner saves routing JSONL traces, transition events, per-mode metrics/reports, route duration, routing precision/recall/F1, detection-to-routing delay, and end-to-end RTF. No Phase 6 benchmark values are claimed in this repository because the required manifest and WhisperRT runtime/model were not present during implementation.
-
-## Phase 7 — Overlap-aware / multi-talker ASR
-
-Phase 7 selects the SURT 2.0 model family after documenting alternatives in [the candidate review](docs/multitalker_candidates.md). SURT 2.0 is designed for continuous multi-talker ASR, but this repository deliberately does not guess or vendor its external runtime API. [`SURT2WindowedASR`](src/streaming_asr/models/multitalker.py) accepts a versioned external `decoder_factory` and emits structured, unordered recognition channels—not speaker identities—with timestamps, optional confidence, rolling text, newly emitted text, and partial/final state.
-
-The published SURT family is a true-streaming architecture. Until a selected external decoder exposes and verifies native causal state through this adapter, the project execution mode is explicitly **LOW-LATENCY WINDOWED INFERENCE**, not true streaming. It never falls back to ordinary WhisperRT when SURT is unavailable.
-
-Configure a Phase 3 manifest plus a verified factory/checkpoint in an override, then run:
-
-```bash
-python3 scripts/run_multitalker.py --config configs/multitalker.yaml --validate-only
-python3 scripts/run_multitalker.py --config configs/multitalker.yaml --max-samples 1
-```
-
-Set `branches.overlap: surt2` in an adaptive override to route Phase 6 overlap events to the structured SURT branch; `overlap_pre_roll_ms` is represented by the existing adaptive history setting. Multi-talker output is evaluated with permutation-invariant WER across output channels, never with speaker-attributed WER. No Phase 7 ASR, latency, memory, or routing result has been measured in this checkout.
-
-## Phase 11 audit status
-
-The Phase 11 repository audit finds a tested implementation/protocol foundation, not a fully validated final ASR system. The current checkout has no verified WhisperRT model run, multi-talker decoder/checkpoint, training checkpoint, final manifests, or Phase 9 final prediction records; final-system accuracy, latency, robustness, and reproducibility therefore remain unmeasured. A small heuristic-OSD result exists only for four locally generated synthetic mixtures and must not be generalized.
-
-Use current HEAD as the source baseline for Kaggle **only after** pinning/testing the runtime and model assets, attaching revisioned data/manifests, configuring a verified multi-talker decoder when needed, and exporting `/kaggle/working` checkpoints/results to persistent versioned storage after each session. Kaggle GPU quota must be checked against the current account/plan because limits may change. See `docs/audits/project_audit.md` for the complete evidence, phase gates, execution order, and persistence strategy; see `outputs/audit/project_audit.json` for the machine-readable audit.
+Earlier phase reports and prompt files are historical evidence, not runnable
+instructions for the current pipeline. See [CITATION.cff](CITATION.cff) when
+citing the artifact; cite measured results only when actual model/data runs
+and their provenance are archived.

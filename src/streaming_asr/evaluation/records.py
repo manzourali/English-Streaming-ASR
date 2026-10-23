@@ -60,3 +60,21 @@ def read_evaluation_records(path: str | Path) -> list[EvaluationRecord]:
         value["error_tags"] = tuple(value.get("error_tags", ()))
         values.append(EvaluationRecord(**value))
     return values
+
+
+def surt_prediction_record(row: dict[str, Any], *, system: str, dataset: str,
+                           split: str, checkpoint: str | None = None,
+                           manifest_sha256: str | None = None) -> EvaluationRecord:
+    """Convert only the native SURT runner schema with exact PI-WER counts."""
+    return EvaluationRecord(system=system, sample_id=row["mixture_id"], split=split,
+        dataset=dataset, metric="pi_wer", value=row["pi_wer"],
+        error_count=row["errors"], reference_units=row["reference_words"],
+        overlap_regime=row["regime"], overlap_ratio=row.get("overlap_ratio"),
+        relative_gain_db=row.get("relative_gain_db"), audio_seconds=row["audio_seconds"],
+        processing_seconds=row["processing_seconds"],
+        finalization_latency_seconds=row["finalization_seconds"],
+        metadata={"checkpoint": checkpoint, "manifest_sha256": manifest_sha256,
+                  "streaming_mode": "native_surt2",
+                  "timing_mode": "unpaced_file_processing",
+                  "first_output_available_sample": row.get("first_output_available_sample"),
+                  "first_output_processing_seconds": row.get("first_output_processing_seconds")})

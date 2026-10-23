@@ -112,12 +112,12 @@ class Trainer:
 
 def load_training_backend(factory_path: str | None, config: Mapping[str, Any]) -> ExternalSurtTrainingBackend:
     if not factory_path:
-        raise BackendNotAvailableError("TRAINING NOT TECHNICALLY SUPPORTED: configure training.backend_factory for an exact, verified Icefall/SURT training recipe. The Phase 7 decoder_factory is inference-only.")
+        raise BackendNotAvailableError("TRAINING NOT TECHNICALLY SUPPORTED: configure model.backend_factory for an exact, verified Icefall/SURT training recipe. The native inference backend_factory is a separate interface.")
     try:
         module_name, attribute = factory_path.split(":", 1)
         backend = getattr(import_module(module_name), attribute)(dict(config))
     except (ValueError, ImportError, AttributeError) as exc:
-        raise BackendNotAvailableError(f"Unable to load configured training.backend_factory {factory_path!r}") from exc
+        raise BackendNotAvailableError(f"Unable to load configured model.backend_factory {factory_path!r}") from exc
     if not isinstance(backend, ExternalSurtTrainingBackend):
-        raise BackendNotAvailableError("training.backend_factory must return ExternalSurtTrainingBackend")
+        raise BackendNotAvailableError("model.backend_factory must return ExternalSurtTrainingBackend")
     return backend
