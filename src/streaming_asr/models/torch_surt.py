@@ -17,6 +17,7 @@ import torch
 from torch import nn
 
 from .multitalker import BackendOutput
+from .whisperrt import resolve_device
 
 
 def _state_bytes(state) -> int:
@@ -67,7 +68,7 @@ class TorchSURTBackend(nn.Module):
         self.endpoint_frames = (endpoint_silence_ms + 9) // 10
         self.max_pending_tokens = max_pending_tokens
         self.max_symbols_per_frame = max_symbols_per_frame
-        self.device = torch.device(device)
+        self.device = torch.device(resolve_device(device))
         self.to(self.device).eval()
         self.reset()
 
@@ -163,7 +164,7 @@ def load_torchscript_backend(config):
         raise ValueError("Export metadata must declare the SURT 2.0 architecture")
     if metadata.get("feature_profile") != "kaldi80-snip-pcm16-v1":
         raise ValueError("Export must be validated against this streaming feature profile")
-    device = config.get("device", "cpu")
+    device = resolve_device(config.get("device", "cpu"))
     def load(name):
         return torch.jit.load(str(root / name), map_location=device).eval()
     tokenizer = spm.SentencePieceProcessor(model_file=str(root / "tokenizer.model"))

@@ -2,6 +2,8 @@
 
 این راهنما مسیر فعال پروژه را توضیح می‌دهد. گزارش‌های Phase قدیمی، تاریخچهٔ توسعه هستند و دستور اجرای فعلی محسوب نمی‌شوند.
 
+برای محیط ثبت‌شده در `kaggle_env_info.md`، ابتدا [راهنمای سازگاری محیط](KAGGLE_ENVIRONMENT.md) را بخوانید. هر پنج نوت‌بوک، پشتهٔ موجود را با constraint حفظ می‌کنند و گزارش محیط و تمام GPUهای قابل مشاهده را ذخیره می‌کنند. Python 3.12 و Torch قدیمی در runbook آزمایشی Icefall مربوط به محیط مجزا هستند، نه کرنل Python 3.13 کگل.
+
 ## Current execution steps
 
 The old VAD/OSD → router → WhisperRT/SURT runbook has been retired.

@@ -66,9 +66,15 @@ python3 scripts/validate_notebooks.py
 python3 -m compileall -q src scripts
 ```
 
-Kaggle setup uses `.[kaggle,dev]` and preserves the platform's PyTorch/CUDA
-installation. Do not install arbitrary k2/CUDA wheels without matching the
-actual pinned recipe and environment.
+Kaggle setup uses `scripts/setup_kaggle.py` to install `.[kaggle,dev]` while
+constraining the existing ML stack. Every notebook saves `environment.json`,
+`installed-stack-constraints.txt` and `pip-freeze.txt` in its artifacts.
+The supplied [environment snapshot](kaggle_env_info.md) records Python 3.13.15,
+NumPy 2.1.3, Torch/torchaudio 2.11.0+cu128 and two T4 GPUs; it is an observed
+image, not proof that all external model recipes support it. Read the
+[environment compatibility guide](docs/KAGGLE_ENVIRONMENT.md) before running.
+The legacy Icefall smoke recipe uses its own isolated Python 3.12 environment;
+its k2/CUDA wheels must not be installed into the notebook kernel.
 
 ## Reference documents
 

@@ -17,7 +17,15 @@ python3 -m pip install -r requirements.txt
 python3 scripts/check_environment.py
 ```
 
-For Conda, use `conda env create -f environment.yml`. Optional model/data dependencies are intentionally not installed by the minimal environment because the exact external SURT and WhisperRT runtimes must be version-pinned by the researcher who supplies them.
+For a lightweight local approximation of the supplied Kaggle image, use
+`conda env create -f environment.yml` (Python 3.13, NumPy 2.1.3). This does not
+provide a CUDA/model environment. In Kaggle, use the notebook setup through
+`scripts/setup_kaggle.py`; it constrains installed ML versions and saves
+`installed-stack-constraints.txt`, `environment.json` and `pip-freeze.txt`.
+Archive these with each run. The isolated legacy Icefall environment is a
+separate recipe; see [environment compatibility](KAGGLE_ENVIRONMENT.md).
+Optional model/data dependencies are intentionally not installed by the minimal
+environment because external runtimes must be pinned and validated separately.
 See [dependency_freeze.md](dependency_freeze.md) for the declared environment boundaries and executed-environment capture procedure.
 
 ## Inputs required for full reproduction

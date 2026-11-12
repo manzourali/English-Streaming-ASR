@@ -107,7 +107,7 @@ class WhisperRTStreamingASR:
         validate_dtype(model_config["dtype"] if "dtype" in model_config else "auto", model_config["device"])
         started = time.perf_counter()
         model = get_model_backend(config.get("backend", "huggingface")).load(model_config)
-        instance = cls(config, model=model)
+        instance = cls(model_config, model=model)
         instance._load_time = time.perf_counter() - started
         return instance
 
@@ -169,8 +169,9 @@ class WhisperRTStreamingASR:
         frame = torch.from_numpy(np.asarray(audio_chunk.samples, dtype=np.float32))
         if self.device.startswith("cuda") and frame.device.type == "cpu":
             frame = frame.pin_memory().to(self.device, non_blocking=True)
-        mel = self._spectrogram.calc_mel_with_new_frame(frame)
-        result = self.model.decode(mel.squeeze(0), self._options)
+        with torch.inference_mode():
+            mel = self._spectrogram.calc_mel_with_new_frame(frame)
+            result = self.model.decode(mel.squeeze(0), self._options)
         elapsed = time.perf_counter() - started
         self._processing_times.append(elapsed)
         update = TranscriptUpdate(
@@ -214,16 +215,20 @@ class TranscriptAccumulator:
 
 
 def resolve_device(requested: str) -> str:
-    if requested not in {"auto", "cpu", "cuda"}:
-        raise ValueError("runtime.device must be one of: auto, cpu, cuda")
+    requested = str(requested)
+    indexed_cuda = requested.startswith("cuda:") and requested[5:].isdigit()
+    if requested not in {"auto", "cpu", "cuda"} and not indexed_cuda:
+        raise ValueError("runtime.device must be auto, cpu, cuda, or cuda:N")
     try:
         import torch
     except ImportError:
-        if requested == "cuda":
+        if requested.startswith("cuda"):
             raise BackendNotAvailableError("CUDA was requested but PyTorch is not installed")
         return "cpu"
-    if requested == "cuda" and not torch.cuda.is_available():
+    if requested.startswith("cuda") and not torch.cuda.is_available():
         raise BackendNotAvailableError("CUDA was requested but is unavailable")
+    if indexed_cuda and int(requested[5:]) >= torch.cuda.device_count():
+        raise BackendNotAvailableError(f"CUDA device index is unavailable: {requested}")
     return "cuda" if requested == "auto" and torch.cuda.is_available() else "cpu" if requested == "auto" else requested
 
 
@@ -232,3 +237,7 @@ def validate_dtype(dtype: str, device: str) -> None:
         raise ValueError("model.dtype must be one of: auto, float32, float16, bfloat16")
     if device == "cpu" and dtype == "float16":
         raise ValueError("float16 is not supported for the Phase 1 CPU path; use float32 or auto")
+    if device.startswith("cuda") and dtype == "bfloat16":
+        import torch
+        if torch.cuda.get_device_capability(device)[0] < 8:
+            raise ValueError("Native bfloat16 requires compute capability >= 8.0; use float16 or float32 on T4")

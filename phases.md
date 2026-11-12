@@ -1,3 +1,6 @@
+Historical phase tree; current execution: `docs/KAGGLE_WORKFLOW_FA.md`.
+Kaggle image compatibility and setup: `docs/KAGGLE_ENVIRONMENT.md`.
+
 MASTER
   │
   ├── PHASE 0

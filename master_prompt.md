@@ -1,3 +1,8 @@
+> Historical research plan. For the active continuous-SURT workflow and the
+> supplied Python 3.13/Torch cu128 Kaggle environment, follow
+> `docs/KAGGLE_WORKFLOW_FA.md` and `docs/KAGGLE_ENVIRONMENT.md`. Preserve the
+> notebook kernel's ML stack; the legacy Icefall smoke stack stays isolated.
+
 You are the primary coding agent for a Master's thesis research project titled:
 
 **English Streaming Automatic Speech Recognition with Overlapped Voices**

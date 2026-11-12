@@ -8,7 +8,9 @@ incremental stateful streaming, Persian feasibility, or real-time performance.
 
 The commands below target Linux x86-64, **Python 3.12**, a CUDA 12.1-capable
 NVIDIA driver, Torch 2.3.1 and the corresponding k2/kaldifeat wheels. Kaggle's
-actual image and driver must satisfy those prerequisites. The matching wheel
+notebook kernel may use a different Python version: the second cell installs
+an isolated Python 3.12 environment without changing the notebook kernel. The
+actual image and driver must satisfy the other prerequisites. The matching wheel
 names exist in the official k2 and kaldifeat indexes, but this combination and
 Lhotse version have not been integration-tested. Stop on any failure and save
 the logs; do not silently change versions. Core packages are pinned, but the
@@ -16,13 +18,29 @@ full transitive environment is recorded rather than locked in advance.
 
 ## 1. Clone pinned sources
 
-Set `PROJECT_COMMIT` to the full committed hash supplied in the handoff, and
-push that commit to the remote before opening Kaggle. A commit cannot contain
-its own hash, so it is deliberately supplied externally here.
+**Supplied image:** `kaggle_env_info.md` reports a Python 3.13.15 notebook
+kernel with Torch/torchaudio 2.11.0+cu128 and two T4 GPUs. The stack below is
+an isolated legacy recipe, not a replacement for that kernel. Never install
+its k2/kaldifeat wheels in the base environment. See
+[environment compatibility](KAGGLE_ENVIRONMENT.md). Existing cells below
+already recreate/activate `surt-venv-py312` in each shell.
+
+Each code block is a separate Kaggle notebook cell: copy it **including**
+`%%bash`, which must be the first line. Each `%%bash` starts a new shell, so
+variables, the current directory, and virtual-environment activation do not
+persist between cells. Each block below sets what it needs explicitly. Run the
+cells in order and stop if any cell fails. Enable GPU and Internet in Kaggle.
+
+The project commit below contains the fixture code; it must be pushed to the
+remote before cloning. The local runbook edits do not change that commit until
+they too are committed and pushed. If the repositories were already cloned in
+the same Kaggle session, this cell reuses them and checks out the pinned commits.
 
 ```bash
+%%bash
+
 set -euo pipefail
-export PROJECT_COMMIT="REPLACE_WITH_FULL_PROJECT_COMMIT"
+export PROJECT_COMMIT="3b2d5134a8ffcc2790b5574f4243128247053f7b"
 export ICEFALL_COMMIT="f8c8578c9dbfa1183cc949b89b5d21bd33aa2ce1"
 export WORK=/kaggle/working
 export PROJECT="$WORK/English-Streaming-ASR"
@@ -33,11 +51,15 @@ export EXP="$WORK/surt-smoke-exp"
 export LOG="$WORK/surt-smoke-logs"
 mkdir -p "$LOG"
 nvidia-smi | tee "$LOG/gpu-before.txt"
-python3 -c 'import sys; assert sys.version_info[:2] == (3, 12), sys.version'
-git clone https://github.com/manzourali/English-Streaming-ASR.git "$PROJECT"
+python3 --version
+if [ ! -d "$PROJECT/.git" ]; then
+  git clone https://github.com/manzourali/English-Streaming-ASR.git "$PROJECT"
+fi
 git -C "$PROJECT" checkout --detach "$PROJECT_COMMIT"
 test "$(git -C "$PROJECT" rev-parse HEAD)" = "$PROJECT_COMMIT"
-git clone https://github.com/k2-fsa/icefall.git "$ICEFALL"
+if [ ! -d "$ICEFALL/.git" ]; then
+  git clone https://github.com/k2-fsa/icefall.git "$ICEFALL"
+fi
 git -C "$ICEFALL" checkout --detach "$ICEFALL_COMMIT"
 test "$(git -C "$ICEFALL" rev-parse HEAD)" = "$ICEFALL_COMMIT"
 printf 'project=%s\nicefall=%s\n' "$PROJECT_COMMIT" "$ICEFALL_COMMIT" | tee "$LOG/commits.txt"
@@ -45,12 +67,32 @@ printf 'project=%s\nicefall=%s\n' "$PROJECT_COMMIT" "$ICEFALL_COMMIT" | tee "$LO
 
 ## 2. Install the selected GPU stack
 
-Use an isolated virtual environment in Kaggle; its Torch replacement does not
-modify the base image. These downloads occur in Kaggle, never on the Mac.
+Use a Python 3.12 environment isolated from Kaggle's notebook kernel. `uv`
+downloads Python 3.12 if it is not available and creates the environment with
+pip; its Torch installation does not replace Kaggle's base packages. These
+downloads occur in Kaggle, never on the Mac. The previous error showing
+`/surt-venv` occurred because `$WORK` was not defined in that cell; the
+earlier attempted installs may have affected Kaggle's base Python. A fresh
+Kaggle session is recommended before retrying. No files are deleted here.
 
 ```bash
-python3 -m venv "$WORK/surt-venv"
-source "$WORK/surt-venv/bin/activate"
+%%bash
+
+set -euo pipefail
+export WORK=/kaggle/working
+export ICEFALL="$WORK/icefall"
+export LOG="$WORK/surt-smoke-logs"
+mkdir -p "$LOG" "$WORK/uv-bin"
+curl -LsSf https://astral.sh/uv/0.8.22/install.sh | \
+  env UV_INSTALL_DIR="$WORK/uv-bin" UV_NO_MODIFY_PATH=1 sh
+"$WORK/uv-bin/uv" --version
+if [ ! -e "$WORK/surt-venv-py312" ]; then
+  "$WORK/uv-bin/uv" venv --seed --python 3.12.10 "$WORK/surt-venv-py312"
+fi
+test -x "$WORK/surt-venv-py312/bin/python"
+source "$WORK/surt-venv-py312/bin/activate"
+python -c 'import sys; print("environment:", sys.executable, sys.version); assert sys.version_info[:2] == (3, 12)'
+python -m pip --version
 python -m pip install 'numpy==1.26.4'
 python -m pip install 'torch==2.3.1+cu121' 'torchaudio==2.3.1+cu121' \
   --index-url https://download.pytorch.org/whl/cu121
@@ -85,6 +127,17 @@ The English BPE is the existing model referenced by Icefall's stage 10, not a
 new tokenizer. Assert its previously observed SHA-256. Do not call `prepare.sh`.
 
 ```bash
+%%bash
+
+set -euo pipefail
+export WORK=/kaggle/working
+export PROJECT="$WORK/English-Streaming-ASR"
+export ICEFALL="$WORK/icefall"
+export RECIPE="$ICEFALL/egs/libricss/SURT"
+export FIXTURE="$WORK/surt-fixture"
+export LOG="$WORK/surt-smoke-logs"
+source "$WORK/surt-venv-py312/bin/activate"
+export PYTHONPATH="$ICEFALL:$ICEFALL/egs/libricss/SURT/dprnn_zipformer"
 mkdir -p "$RECIPE/data/lang_bpe_500"
 curl --fail --location --retry 3 \
   'https://huggingface.co/Zengwei/icefall-asr-librispeech-pruned-transducer-stateless7-streaming-2022-12-29/resolve/main/data/lang_bpe_500/bpe.model' \
@@ -111,6 +164,17 @@ They do not independently prove that every intermediate gradient was finite.
 Record that limitation unless separate gradient instrumentation is approved.
 
 ```bash
+%%bash
+
+set -euo pipefail
+export WORK=/kaggle/working
+export ICEFALL="$WORK/icefall"
+export RECIPE="$ICEFALL/egs/libricss/SURT"
+export FIXTURE="$WORK/surt-fixture"
+export EXP="$WORK/surt-smoke-exp"
+export LOG="$WORK/surt-smoke-logs"
+source "$WORK/surt-venv-py312/bin/activate"
+export PYTHONPATH="$ICEFALL:$ICEFALL/egs/libricss/SURT/dprnn_zipformer"
 cd "$RECIPE"
 nvidia-smi --query-gpu=timestamp,memory.used --format=csv -l 1 > "$LOG/gpu-memory.csv" &
 GPU_MONITOR=$!
@@ -155,6 +219,18 @@ whole feature batch despite chunk-size settings; report it only as whole-batch
 decode with chunk-constrained configuration, not true incremental decoding.
 
 ```bash
+%%bash
+
+set -euo pipefail
+export WORK=/kaggle/working
+export ICEFALL="$WORK/icefall"
+export RECIPE="$ICEFALL/egs/libricss/SURT"
+export FIXTURE="$WORK/surt-fixture"
+export EXP="$WORK/surt-smoke-exp"
+export LOG="$WORK/surt-smoke-logs"
+source "$WORK/surt-venv-py312/bin/activate"
+export PYTHONPATH="$ICEFALL:$ICEFALL/egs/libricss/SURT/dprnn_zipformer"
+cd "$RECIPE"
 python dprnn_zipformer/decode.py \
   --iter 1 --avg 1 --use-averaged-model false --exp-dir "$EXP" \
   --manifest-dir "$FIXTURE/manifests" --bpe-model data/lang_bpe_500/bpe.model \

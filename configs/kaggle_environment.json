@@ -1,0 +1,24 @@
+{
+  "source": "kaggle_env_info.md",
+  "captured_at": null,
+  "python": "3.13.15",
+  "system": "Linux",
+  "machine": "x86_64",
+  "cwd": "/kaggle/working",
+  "reported_platform_label": "Google Colab",
+  "packages": {
+    "torch": "2.11.0+cu128",
+    "torchaudio": "2.11.0+cu128",
+    "tensorflow": "2.20.0",
+    "numpy": "2.1.3",
+    "pandas": "2.3.3",
+    "transformers": "5.16.1",
+    "scikit-learn": "1.6.1",
+    "opencv-python": "4.14.0",
+    "Pillow": "12.3.0",
+    "soundfile": "0.14.0",
+    "librosa": "0.11.0"
+  },
+  "gpu": {"count": 2, "name": "Tesla T4", "memory_mib_each": 15360},
+  "driver": "580.178.04"
+}

@@ -3,7 +3,7 @@ experiment:
   seed: 42
 runtime:
   environment: auto
-  device: cpu
+  device: auto
 data:
   manifest: data/manifests/test.jsonl
   max_samples: null

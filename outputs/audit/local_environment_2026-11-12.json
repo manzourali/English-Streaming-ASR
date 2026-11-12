@@ -1,0 +1,104 @@
+{
+  "captured_at": "2026-11-12T17:31:49.276746+00:00",
+  "python": "3.12.0",
+  "executable": "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3",
+  "os": "macOS-26.2-arm64-arm-64bit",
+  "machine": "arm64",
+  "cwd": "/Users/alimanzour/Documents/English-Streaming-ASR",
+  "kaggle": false,
+  "platform_signals": {
+    "kaggle_kernel_run_type": null,
+    "kaggle_working_exists": false,
+    "colab_release_tag": null
+  },
+  "packages": {
+    "numpy": {
+      "status": "installed",
+      "version": "1.26.1",
+      "import": "OK"
+    },
+    "yaml": {
+      "status": "installed",
+      "version": "6.0.3",
+      "import": "OK"
+    },
+    "pytest": {
+      "status": "installed",
+      "version": "9.1.1",
+      "import": "OK"
+    },
+    "soundfile": {
+      "status": "not installed"
+    },
+    "sentencepiece": {
+      "status": "not installed"
+    },
+    "webrtcvad": {
+      "status": "installed",
+      "version": "2.0.14.post1",
+      "import": "not checked"
+    },
+    "torch": {
+      "status": "not installed"
+    },
+    "torchaudio": {
+      "status": "not installed"
+    },
+    "transformers": {
+      "status": "not installed"
+    },
+    "datasets": {
+      "status": "not installed"
+    },
+    "peft": {
+      "status": "not installed"
+    },
+    "huggingface_hub": {
+      "status": "not installed"
+    },
+    "pandas": {
+      "status": "not installed"
+    },
+    "tensorflow": {
+      "status": "not installed"
+    },
+    "librosa": {
+      "status": "not installed"
+    },
+    "sklearn": {
+      "status": "not installed"
+    },
+    "cv2": {
+      "status": "not installed"
+    },
+    "PIL": {
+      "status": "not installed"
+    },
+    "k2": {
+      "status": "not installed"
+    },
+    "kaldifeat": {
+      "status": "not installed"
+    },
+    "lhotse": {
+      "status": "not installed"
+    }
+  },
+  "writable": {
+    "outputs": true,
+    "checkpoints": true
+  },
+  "gpu": {
+    "available": false,
+    "count": 0,
+    "devices": [],
+    "error": "ModuleNotFoundError: No module named 'torch'"
+  },
+  "warnings": [],
+  "errors": [],
+  "project_import": {
+    "status": "OK",
+    "version": "0.1.0"
+  },
+  "reference_source": "kaggle_env_info.md"
+}
