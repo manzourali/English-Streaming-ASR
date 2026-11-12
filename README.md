@@ -72,6 +72,7 @@ actual pinned recipe and environment.
 
 ## Reference documents
 
+- [Persian SURT feasibility audit and adapter usage](docs/PERSIAN_SURT_FEASIBILITY.md)
 - [Current Persian execution guide](docs/KAGGLE_WORKFLOW_FA.md)
 - [Stage2 architecture and B1–B8 report](docs/stages/stage2_report.md)
 - [Current dependency map](docs/phase_dependency_map.md)

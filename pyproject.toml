@@ -17,6 +17,7 @@ surt = ["torch>=2.1", "sentencepiece>=0.1.99"]
 audio = ["soundfile>=0.12"]
 phase1 = ["datasets>=2.0", "huggingface_hub>=0.20", "soundfile>=0.12"]
 phase2 = ["webrtcvad-wheels>=2.0.14"]
+persian = ["hazm>=0.10", "num2words>=0.5.13", "sentencepiece>=0.1.99"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
