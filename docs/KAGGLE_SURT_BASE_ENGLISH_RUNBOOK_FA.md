@@ -108,7 +108,7 @@ CUDA قبل و بعد timer همگام می‌شود. load شامل ساخت CPU
 feature جدا، warmup جدا، mask+encoder+greedy decode جدا و wall کل فرایند جدا ثبت می‌شوند.
 RTF بر مجموع ثانیهٔ سه ورودی است و زمان batch/warm cache است؛ latency استریم یا end-to-end شامل IO نیست.
 peak allocated/reserved از reset پس از warmup است؛ reserved می‌تواند cache warmup را داشته باشد.
-`gpu-memory.csv` نمونه‌برداری یک‌ثانیه‌ای کل دستگاه است و peak دقیق فرایند نیست؛ model-load memory
+`gpu-memory-*.csv` نمونه‌برداری یک‌ثانیه‌ای کل دستگاه است و peak دقیق فرایند نیست؛ model-load memory
 تنها در این نمونه‌برداری پوشش دارد. یک اجرای کوتاه برای تخمین هزینهٔ آموزش کافی نیست.
 
 متن خام هر دو branch و reference، assignment و S/D/I/N هر شاخه و کل در JSON/TXT ثبت می‌شود.
@@ -252,6 +252,12 @@ DATA
 
 ### سلول 4 — 04-decode
 
+اگر پیام `Existing result` دریافت شد، مدل در این تلاش دوباره اجرا نشده است؛
+`results/result.json` از قبل وجود دارد. مستقیماً سلول ۵ را اجرا و بستهٔ بازبینی را برگردانید.
+وجود فایل به‌تنهایی اثبات تکمیل یا کیفیت نیست؛ `process.json`، قرارداد، transcript و نتیجه باید بررسی شوند.
+برای رفع این توقف، session تازه نسازید، نتیجه یا assets را پاک نکنید و سلول ۳ را دوباره اجرا نکنید.
+اگر پس از بازبینی اجرای تازه لازم شد، ابتدا شواهد قبلی حفظ و مسیر خروجی تازه با همان assets تعیین شود.
+
 ```bash
 %%bash
 set -euo pipefail
@@ -264,7 +270,7 @@ trap 'status=$?; if [ "$status" -eq 0 ]; then printf "OK: 04-decode\n"; else pri
 set -euxo pipefail
 source /kaggle/working/English-Streaming-ASR/scripts/surt_base/env.sh
 python "$PROJECT/scripts/surt_base/runtime.py"
-nvidia-smi --id=0 --query-gpu=timestamp,uuid,memory.used --format=csv -l 1 > "$BASE/logs/gpu-memory.csv" 2>&1 &
+nvidia-smi --id=0 --query-gpu=timestamp,uuid,memory.used --format=csv -l 1 > "$BASE/logs/gpu-memory-$(date -u +%Y%m%dT%H%M%S)-$$.csv" 2>&1 &
 GPU_MONITOR=$!
 trap 'kill "$GPU_MONITOR" 2>/dev/null || true; wait "$GPU_MONITOR" 2>/dev/null || true' EXIT
 python "$PROJECT/scripts/surt_base/run.py"

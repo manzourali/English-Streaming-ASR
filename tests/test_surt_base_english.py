@@ -213,3 +213,28 @@ def test_numpy_scipy_repair_matches_fresh_environment_and_preflight():
     assert '--no-deps --only-binary=:all:' in existing
     assert 'requirements-compat.txt' in existing
     assert 'requirements-kaggle.txt' not in existing
+
+
+def test_existing_decode_result_preserves_assets_and_directs_to_archive(tmp_path):
+    import os
+    base = tmp_path / 'run'
+    assets = base / 'assets'
+    assets.mkdir(parents=True)
+    (assets / 'inputs.json').write_text(json.dumps([{'duration': 1}] * 3))
+    (assets / 'fixture-weight.pt').write_bytes(b'existing fixture weight')
+    output = base / 'results'
+    output.mkdir()
+    # Even incomplete prior evidence must survive; existence is not a success claim.
+    (output / 'result.json').write_text('{"status": "incomplete fixture"}\n')
+    (output / 'process.json').write_text('{"exit_code": 1}\n')
+    before = {str(p.relative_to(base)): p.read_bytes() for p in base.rglob('*') if p.is_file()}
+    proc = subprocess.run([sys.executable, str(ROOT / 'scripts/surt_base/run.py')],
+                          env=dict(os.environ, BASE=str(base)), capture_output=True, text=True)
+    assert proc.returncode != 0
+    assert 'Decode was not started' in proc.stderr
+    assert 'Run cell 5 (05-archive)' in proc.stderr
+    assert 'Keep this session and all assets' in proc.stderr
+    assert 'does not prove gate 1A passed' in proc.stderr
+    assert 'fresh run directory/session' not in proc.stderr
+    after = {str(p.relative_to(base)): p.read_bytes() for p in base.rglob('*') if p.is_file()}
+    assert after == before

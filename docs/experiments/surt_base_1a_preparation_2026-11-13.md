@@ -70,3 +70,15 @@ audio, scientific packages or GPU stack were downloaded/installed locally for th
 Fix validation: 26 CPU contract tests passed; all five Kaggle cells passed bash -n,
 runtime.py passed AST parsing, and git diff --check passed. The new regression check
 keeps fresh-install, existing-environment repair and preflight pins consistent.
+
+Second Kaggle follow-up, 2026-11-13: attachment reports `START 04-decode` (not cell 2).
+Preflight passed on Python 3.12.10, NumPy 1.26.4, SciPy 1.13.1 and one Tesla T4;
+the launcher then refused an existing `results/result.json` before invoking the recipe.
+The attachment does not contain the existing result or prove model loading/recognition.
+The recovery is to run cell 5 now and inspect its small archive, preserving this session,
+assets and prior output. The guard now explains that action instead of suggesting a fresh
+session. GPU monitor logs get unique names so another attempt preserves earlier samples.
+An offline regression verifies the guard launches no recipe, retains all existing bytes,
+and directs incomplete prior results to review without calling them successful.
+Validation: 27 CPU tests passed, all five cells passed bash syntax checks, the launcher
+passed AST parsing, and git diff --check passed. Real decode evidence remains pending.

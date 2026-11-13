@@ -19,7 +19,12 @@ def main():
     output.mkdir(exist_ok=True)
     result = output / 'result.json'
     if result.exists():
-        raise RuntimeError('Existing result: preserve it and use a fresh run directory/session')
+        raise RuntimeError(
+            f'Existing result: {result}. Decode was not started. '
+            'Run cell 5 (05-archive) and return surt-base-1a-review.tar.gz '
+            'for inspection of the existing evidence. Keep this session and all assets; '
+            'do not delete results or download weights again. '
+            'An existing result alone does not prove gate 1A passed.')
     model = base / 'assets/model'
     argv = [sys.executable, str(Path(os.environ['RECIPE']) / 'dprnn_zipformer/pretrained.py'),
             '--checkpoint', str(model / 'exp/surt_base/pretrained.pt'),
