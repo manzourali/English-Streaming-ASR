@@ -41,6 +41,10 @@ Common Voice فارسی می‌تواند منبع اولیه باشد، اما 
 
 ## وضعیت ابزارهای موجود
 
+آماده‌سازی محلی گام ۱A در [runbook مستقل baseline واقعی انگلیسی](KAGGLE_SURT_BASE_ENGLISH_RUNBOOK_FA.md)
+قرار دارد: وزن رسمی Base و BPE پین‌شده، دو کلیپ واقعی و یک مخلوط، whole-batch decode و PI-WER محدود.
+تست محلی به معنی عبور ۱A نیست؛ بارگذاری و رونویسی واقعی تا بازگشت شواهد Kaggle در انتظار است.
+
 چهار نوت‌بوک باقی‌مانده ابزار داده/قرارداد native export هستند و هنوز recipe کامل adaptation فارسی نیستند. `train_asr.py --validate-only` آموزش انجام نمی‌دهد. adapter دادهٔ فعلی هم به‌تنهایی source-featureهای هم‌تراز مورد نیاز recipe را نمی‌سازد. هستهٔ audio، mixture، manifest، معیار و state حفظ شده است؛ مدل قبلی و router حذف شده‌اند. VAD/OSD موجود ابزار تشخیصی عمومی‌اند و ورودی اجباری مسیر SURT نیستند.
 
 ## پرامپت‌ها و آرشیو

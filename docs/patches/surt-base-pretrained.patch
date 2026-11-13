@@ -1,0 +1,93 @@
+--- a/egs/libricss/SURT/dprnn_zipformer/pretrained.py
++++ b/egs/libricss/SURT/dprnn_zipformer/pretrained.py
+@@ -33,6 +33,7 @@
+ from train import add_model_arguments, get_params, get_surt_model
+ 
+ from icefall.utils import num_tokens
++import runtime as baseline
+ 
+ 
+ def get_parser():
+@@ -154,7 +155,7 @@
+     return ans
+ 
+ 
+-@torch.no_grad()
++@torch.inference_mode()
+ def main():
+     parser = get_parser()
+     args = parser.parse_args()
+@@ -168,6 +169,7 @@
+     params.blank_id = token_table["<blk>"]
+     params.unk_id = token_table["<unk>"]
+     params.vocab_size = num_tokens(token_table) + 1
++    baseline.check_tokens(params, token_table)
+ 
+     logging.info(f"{params}")
+ 
+@@ -177,6 +179,8 @@
+ 
+     logging.info(f"device: {device}")
+ 
++    baseline.preflight()
++    load_begin = baseline.start()
+     logging.info("Creating model")
+     model = get_surt_model(params)
+ 
+@@ -184,9 +188,12 @@
+     logging.info(f"Number of model parameters: {num_param}")
+ 
+     checkpoint = torch.load(args.checkpoint, map_location="cpu", weights_only=False)
+-    model.load_state_dict(checkpoint["model"], strict=False)
++    baseline.check_checkpoint(checkpoint, model, args.checkpoint)
++    model.load_state_dict(checkpoint["model"], strict=True)
+     model.to(device)
+     model.eval()
++    baseline.METRICS["model_load_seconds"] = baseline.elapsed(load_begin)
++    del checkpoint
+ 
+     logging.info("Constructing Fbank computer")
+     opts = kaldifeat.FbankOptions()
+@@ -206,12 +213,28 @@
+     waves = [w.to(device) for w in waves]
+ 
+     logging.info("Decoding started")
++    feature_begin = baseline.start()
+     features = fbank(waves)
+     feature_lengths = [f.size(0) for f in features]
+ 
+     features = pad_sequence(features, batch_first=True, padding_value=math.log(1e-10))
+     feature_lengths = torch.tensor(feature_lengths, device=device)
+ 
++    baseline.METRICS["feature_seconds"] = baseline.elapsed(feature_begin)
++    baseline.feature_contract(opts, features, feature_lengths)
++    warmup_begin = baseline.start()
++    decode_features(features, feature_lengths, model, params, token_table)
++    baseline.METRICS["warmup_seconds"] = baseline.elapsed(warmup_begin)
++    torch.cuda.reset_peak_memory_stats()
++    decode_begin = baseline.start()
++    hyps = decode_features(features, feature_lengths, model, params, token_table)
++    baseline.METRICS["decode_seconds"] = baseline.elapsed(decode_begin)
++    baseline.finish(params, hyps)
++
++    logging.info("Decoding Done")
++
++
++def decode_features(features, feature_lengths, model, params, token_table):
+     B, T, F = features.shape
+     processed = model.mask_encoder(features)  # B,T,F*num_channels
+     masks = processed.view(B, T, F, params.num_channels).unbind(dim=-1)
+@@ -294,12 +317,7 @@
+                     f"Unsupported decoding method: {params.decoding_method}"
+                 )
+ 
+-    s = "\n"
+-    for filename, hyp in zip(params.sound_files, hyps):
+-        s += f"{filename}:\n{hyp}\n\n"
+-    logging.info(s)
+-
+-    logging.info("Decoding Done")
++    return _group_channels(hyps)
+ 
+ 
+ if __name__ == "__main__":

@@ -1,0 +1,22 @@
+diff --git a/egs/libricss/SURT/dprnn_zipformer/asr_datamodule.py b/egs/libricss/SURT/dprnn_zipformer/asr_datamodule.py
+index 500df9ea..8e44aeb0 100644
+--- a/egs/libricss/SURT/dprnn_zipformer/asr_datamodule.py
++++ b/egs/libricss/SURT/dprnn_zipformer/asr_datamodule.py
+@@ -305,7 +305,7 @@ class LibriCssAsrDataModule:
+             return_sources=False,
+             strict=False,
+         )
+-        valid_sampler = DynamicBucketingSampler(
++        valid_sampler = SimpleCutSampler(
+             cuts_valid,
+             max_duration=self.args.max_duration_valid,
+             max_cuts=self.args.max_cuts,
+@@ -334,7 +334,7 @@ class LibriCssAsrDataModule:
+             return_sources=False,
+             strict=False,
+         )
+-        sampler = DynamicBucketingSampler(
++        sampler = SimpleCutSampler(
+             cuts,
+             max_duration=self.args.max_duration_valid,
+             max_cuts=self.args.max_cuts,

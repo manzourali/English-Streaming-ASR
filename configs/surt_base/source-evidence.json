@@ -1,0 +1,69 @@
+{
+  "checked_on": "2026-11-13",
+  "model_tree": [
+    {
+      "type": "directory",
+      "oid": "179670767d3a73e7f2d82d0cbdee2ec987c9c50f",
+      "size": 0,
+      "path": "exp/surt_base/tensorboard"
+    },
+    {
+      "type": "file",
+      "oid": "82a0c57431fbeebffcdde93d074bf9dbabd3e462",
+      "size": 427365083,
+      "lfs": {
+        "oid": "6c344acea839cc042f490905d1bf016d3de3d25014cd0b22605761073381af30",
+        "size": 427365083,
+        "pointerSize": 134
+      },
+      "xetHash": "94ceb1686d883d35a2c088855333a1af92f215ffcbd3e397226d3eee3b4cd8cb",
+      "path": "exp/surt_base/epoch-30.pt"
+    },
+    {
+      "type": "file",
+      "oid": "3baa55d4b219b2e88cbc10b1c66e2937dcd367db",
+      "size": 106944796,
+      "lfs": {
+        "oid": "919bb9454526fb9ad963eb5a4168940a43c3b8331017a1c9ade477197c7072d4",
+        "size": 106944796,
+        "pointerSize": 134
+      },
+      "xetHash": "5f221908a7be2bd0d00eeb4475891460110e8337976257dcd7b9f01d0bbaf144",
+      "path": "exp/surt_base/pretrained.pt"
+    }
+  ],
+  "bpe_tree": [
+    {
+      "type": "file",
+      "oid": "0a7fdb4e15f063e06d9936c71e13525b31c588e3",
+      "size": 244865,
+      "lfs": {
+        "oid": "c53433de083c4a6ad12d034550ef22de68cec62c4f58932a7b6b8b2f1e743fa5",
+        "size": 244865,
+        "pointerSize": 131
+      },
+      "xetHash": "a3c10fad6731fefc1ad0662d56cf7ec963b50123e97f5eabd8bf7c2d43d84dee",
+      "path": "data/lang_bpe_500/bpe.model"
+    },
+    {
+      "type": "file",
+      "oid": "b4d1bf82e68de1354f2a3f5fd51094d61d65c77c",
+      "size": 5048,
+      "path": "data/lang_bpe_500/tokens.txt"
+    },
+    {
+      "type": "file",
+      "oid": "f396906e5e8cff2f41ee0b175db24ea2ec6ed870",
+      "size": 3026571,
+      "path": "data/lang_bpe_500/words.txt"
+    }
+  ],
+  "model_card": "---\nlicense: apache-2.0\ndatasets:\n- libricss_surt\nlanguage:\n- en\nmetrics:\n- orc-wer\n---\n# LibriCSS dprnn_zipformer\n\nThis model is based on the icefall `dprnn_zipformer` recipe under `egs/libricss/SURT`. \nFor details, refer to the README.md in the recipe.\n\n## Performance Record\n\nThe following results are obtained using the adapted models using modified beam search\nwith a beam size of 4.\n\n#### IHM-Mix\n\n| Model | # params | 0L | 0S | OV10 | OV20 | OV30 | OV40 | Avg. |\n|------------|:-------:|:----:|:---:|----:|:----:|:----:|:----:|:----:|\n| dprnn_zipformer (base)  | 26.7 | 5.1 | 4.2 | 13.7 | 18.7 | 20.5 | 20.6 | 13.8 |\n| dprnn_zipformer (large) | 37.9 | 4.6 | 3.8 | 12.7 | 14.3 | 16.7 | 21.2 | 12.2 |\n\n#### SDM\n\n| Model | # params | 0L | 0S | OV10 | OV20 | OV30 | OV40 | Avg. |\n|------------|:-------:|:----:|:---:|----:|:----:|:----:|:----:|:----:|\n| dprnn_zipformer (base)  | 26.7 | 6.8 | 7.2 | 21.4 | 24.5 | 28.6 | 31.2 | 20.0 |\n| dprnn_zipformer (large) | 37.9 | 6.4 | 6.9 | 17.9 | 19.7 | 25.2 | 25.5 | 16.9 |\n",
+  "sources": {
+    "model_api": "https://huggingface.co/api/models/desh2608/icefall-surt-libricss-dprnn-zipformer",
+    "model_tree": "https://huggingface.co/api/models/desh2608/icefall-surt-libricss-dprnn-zipformer/tree/5413ea7aac8d667d36127260ce5fa54253d74270/exp/surt_base",
+    "recipe": "https://github.com/k2-fsa/icefall/tree/f8c8578c9dbfa1183cc949b89b5d21bd33aa2ce1/egs/libricss/SURT",
+    "dataset": "https://huggingface.co/datasets/openslr/librispeech_asr/tree/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1",
+    "license": "https://www.openslr.org/12/"
+  }
+}
