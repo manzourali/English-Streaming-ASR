@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "english-streaming-asr-overlap"
 version = "0.1.0"
-description = "Phase-by-phase research foundation for English streaming ASR with overlapped speech."
+description = "Research infrastructure for Persian language adaptation of streaming multi-talker SURT 2.0."
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = ["numpy>=1.23", "PyYAML>=6.0"]

@@ -16,7 +16,7 @@ def _run(command: list[str]) -> int:
 
 def _not_ready() -> list[str]:
     needed = []
-    for label, path in (("WhisperRT checkpoint", None), ("SURT checkpoint", None), ("fine-tuned SURT checkpoint", None), ("Phase 3 final test manifest", ROOT / "data/manifests/test.jsonl")):
+    for label, path in (("SURT checkpoint", None), ("Persian-adapted SURT checkpoint", None), ("final test manifest", ROOT / "data/manifests/test.jsonl")):
         if path is None or not path.is_file(): needed.append(label)
     return needed
 

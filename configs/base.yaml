@@ -7,8 +7,9 @@ data:
   backend: local
   path: data
 model:
-  backend: huggingface
-  name: MLSpeech/WhisperRT-Streaming
+  name: SURT-2.0
+  backend_factory: null
+  checkpoint: null
 audio:
   sample_rate: 16000
   chunk_ms: 320

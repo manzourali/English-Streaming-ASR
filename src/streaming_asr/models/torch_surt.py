@@ -17,7 +17,7 @@ import torch
 from torch import nn
 
 from .multitalker import BackendOutput
-from .whisperrt import resolve_device
+from streaming_asr.utils.device import resolve_device
 
 
 def _state_bytes(state) -> int:

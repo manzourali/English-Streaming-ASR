@@ -23,7 +23,6 @@ reproduction:
 frozen_inputs:
   evaluation_config: configs/evaluation.yaml
   training_config: configs/training.yaml
-  adaptive_config: configs/adaptive.yaml
   multitalker_config: configs/multitalker.yaml
   requirements: requirements.txt
   conda_environment: environment.yml

@@ -19,5 +19,7 @@ data/*
 *.pt
 *.pth
 *.safetensors
+*.tar.gz
+*.zip
 **/*.DS_Store
 .DS_Store

@@ -107,7 +107,7 @@ def create(config): return Backend()
 
 def test_active_notebooks_compile_and_exclude_retired_router_commands():
     paths = [ROOT / "english-streaming-asr.ipynb", *sorted((ROOT / "notebooks").glob("*.ipynb"))]
-    assert len(paths) == 5
+    assert len(paths) == 4
     assert not (ROOT / "notebooks/12_adaptive_e2e_surt.ipynb").exists()
     for path in paths:
         notebook = json.loads(path.read_text())

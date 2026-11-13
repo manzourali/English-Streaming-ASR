@@ -1,18 +1,15 @@
-# Current execution matrix
+# Current execution matrix — Persian SURT
 
-| Entry point | Real requirement | Output | Status |
-| --- | --- | --- | --- |
-| `download_librispeech.py` | Internet and disk, or use attached data instead | Verified OpenSLR speech files | Implemented; network execution not tested locally |
-| `prepare_dataset.py` | Extracted local LibriSpeech transcripts/audio | Speaker-disjoint source manifests | Fixture-tested |
-| `generate_overlap.py` | Real source manifests or explicit tone demo | Portable two-source mixtures, labels, provenance | Tested |
-| `check_surt_assets.py` | Optional native export directory | Missing/incompatible/present/smoke status | Structure checks tested; real GPU probe pending |
-| `run_multitalker.py` / `run_streaming.py` | Trained native exports and matching features/tokenizer | Transcripts, raw metrics, EvaluationRecord JSONL | Scheduler/schema tested; real model execution pending |
-| `train_asr.py --validate-only` | Split manifests | HEAT target/leakage validation | Tested |
-| `train_asr.py` | Actual ExternalSurtTrainingBackend | Trained checkpoints and trainer metadata | Integration missing |
-| Native exporter | Pinned recipe, checkpoint and exact streaming state implementation | Streaming export bundle | Not implemented |
-| `evaluate.py` / `benchmark.py` | Actual EvaluationRecord JSONL | Aggregation and compute report | Handoff tested |
-| `run_baseline.py` | Optional compatible WhisperRT runtime, weights and clean audio | Independent baseline result | Actual model execution pending |
+| Entry point / gate | Output | Evidence / limitation |
+| --- | --- | --- |
+| `docs/KAGGLE_SURT_RUNBOOK.md` | Synthetic one-step checkpoint and 12-cut decode | Passed on user-supplied Kaggle evidence; no real speech or Persian |
+| `docs/prompts/PERSIAN_SURT_NEXT_STEP.md` | Request for a pinned real-English pretrained baseline runbook | Next work; not yet executed |
+| Mini Persian transfer/update and stateful streaming | Persian feasibility/resource evidence | Planned; not established |
+| `scripts/persian_tokenizer.py` | Normalization, train-only BPE and coverage | Utilities exist; not connected to a validated Persian model recipe |
+| `generate_overlap.py`, manifests and `icefall_adapter` | Small two-source data / Lhotse-style metadata | Does not alone implement FastMSS or aligned mask-target recipe features |
+| `check_surt_assets.py`, `run_multitalker.py`, `run_streaming.py` | Native export checks / transcripts / records | Real compatible export still required; upstream recipe is a separate execution path |
+| `train_asr.py --validate-only` | Manifest/target checks | No optimizer update |
+| `train_asr.py` | External training-backend wrapper | Real training integration missing; use actual pinned Icefall for model work |
+| `evaluate.py`, `benchmark.py` | Existing record aggregation | Short-mixture PI-WER available; ORC-WER continuous protocol integration pending |
 
-Full training needs a scalable recipe/DataLoader; the local trainer's eager
-batch materialization and epoch-level resume are not a full-scale training
-solution. No fixed Kaggle GPU/quota or k2 wheel combination is assumed.
+Current decisions and prompts: [roadmap](PERSIAN_SURT_ROADMAP_FA.md).

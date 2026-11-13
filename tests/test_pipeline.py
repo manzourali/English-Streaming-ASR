@@ -29,3 +29,15 @@ def test_finalization_exposes_all_tails_once():
     assert (final.vad, final.overlap, final.asr) == ("tail", "tail", "tail")
     assert pipeline.finalize() is final
     assert vad.finals == osd.finals == asr.finals == 1
+
+
+def test_continuous_recognizer_receives_every_sample():
+    class Recognizer:
+        def start(self): self.count = 0
+        def process(self, chunk): self.count += len(chunk.samples)
+        def finalize(self): return self.count
+    pipeline = StreamingASRPipeline(asr=Recognizer())
+    pipeline.start()
+    for chunk in AudioStream.from_array(np.zeros(1001), 16000, 300):
+        pipeline.process(chunk)
+    assert pipeline.finalize().asr == 1001

@@ -1,24 +1,18 @@
-# Active Kaggle notebook guide
+# Kaggle entry points
 
-The previous routed WhisperRT/SURT notebook sequence is retired. Use the
-complete [Persian workflow](KAGGLE_WORKFLOW_FA.md).
+The current task is Persian language adaptation of SURT 2.0. Follow the
+[roadmap](PERSIAN_SURT_ROADMAP_FA.md) and [immediate next-step prompt](prompts/PERSIAN_SURT_NEXT_STEP.md),
+not the old English scaffold's notebook order.
 
-All five notebooks use `scripts/setup_kaggle.py`: existing ML package versions
-are written as pip constraints before installing lightweight extras. The setup
-requires binary wheels for dependencies and stops on dependency conflicts.
-Each session records all visible GPUs and package versions in `environment.json`.
-See [environment compatibility](KAGGLE_ENVIRONMENT.md) for the supplied Python
-3.13/Torch cu128 image and the separate legacy Icefall environment.
+The completed synthetic smoke is documented in `KAGGLE_SURT_RUNBOOK.md`.
+The next real-speech baseline should run the pinned upstream recipe directly.
 
-1. `english-streaming-asr.ipynb`: environment and real speech-mixture preparation.
-2. `notebooks/12_surt_streaming_inference.ipynb`: base weights, explicit native
-   readiness check, actual inference only when a compatible export exists.
-3. `notebooks/13_surt_training_evaluation.ipynb`: optional data validation and
-   training through an externally implemented training backend.
-4. Repeat notebook 12 for a validated fine-tuned export, then use
-   `notebooks/14_surt_evaluation.ipynb` on complete identical test sets.
+Four diagnostic notebooks remain: the root English data notebook, 12 (native
+export checks/inference), 13 (external-backend training scaffold) and 14
+(record evaluation). They do not implement Persian adaptation. Their setup
+uses `scripts/setup_kaggle.py` with installed-stack constraints and saves
+`environment.json` and `pip-freeze.txt`.
 
-Notebook 11 is an independent optional WhisperRT comparison. Notebooks 00–10
-and `12_adaptive_e2e_surt.ipynb` were removed because they duplicated or
-contradicted this execution path. Model exports and actual training integration
-remain engineering prerequisites; downloading a checkpoint does not supply them.
+See [environment compatibility](KAGGLE_ENVIRONMENT.md) and
+[log archive/retention](KAGGLE_SURT_ARTIFACTS_FA.md). The old independent
+single-stream baseline notebook and retired router code have been removed.

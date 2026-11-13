@@ -397,3 +397,16 @@ the invented text. A missing score, import error, missing checkpoint, out-of-
 memory, or lack of real chunk-state support is a failed or partial test—not a
 zero WER or a verified recipe. Preserve the logs, BPE hash, full package freeze,
 input/fixture/checkpoint hashes, GPU sampling and actual command lines.
+
+
+## 6. Archive and next gate
+
+[Archive all logs as a single downloadable file](KAGGLE_SURT_ARTIFACTS_FA.md).
+Keep a small experiment summary, pins, patches and hashes in Git; keep model
+weights, data and environments outside ordinary Git history. The observed
+synthetic-smoke evidence is recorded in
+[the experiment note](experiments/surt_smoke_2026-11-12.md).
+
+The next gate is [official pretrained SURT Base on real English speech](prompts/PERSIAN_SURT_NEXT_STEP.md),
+followed by mini Persian transfer/update and genuine chunk-state/resource
+checks. This smoke alone does not complete [Persian feasibility](PERSIAN_SURT_ROADMAP_FA.md).

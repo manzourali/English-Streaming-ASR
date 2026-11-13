@@ -1,37 +1,12 @@
-Historical phase tree; current execution: `docs/KAGGLE_WORKFLOW_FA.md`.
-Kaggle image compatibility and setup: `docs/KAGGLE_ENVIRONMENT.md`.
+# فازهای فعال — Persian SURT 2.0
 
-MASTER
-  │
-  ├── PHASE 0
-  │     Infrastructure
-  │
-  ├── PHASE 1
-  │     WhisperRT
-  │
-  ├── PHASE 2
-  │     Streaming VAD
-  │
-  ├── PHASE 3
-  │     Synthetic Overlap
-  │
-  ├── PHASE 4
-  │     Overlap Benchmark
-  │
-  ├── PHASE 5
-  │     OSD
-  │
-  ├── PHASE 6
-  │     Adaptive Pipeline
-  │
-  ├── PHASE 7
-  │     Multi-Talker
-  │
-  ├── PHASE 8
-  │     Training / PEFT
-  │
-  ├── PHASE 9
-  │     Evaluation
-  │
-  └── PHASE 10
-        Thesis / Reproducibility
+0. زیرساخت مصنوعی: موفق بر اساس شواهد کاربر.
+1. امکان‌سنجی واقعی: baseline انگلیسی → mini فارسی/انتقال vocabulary → stateful streaming و منابع؛ هنوز کامل نیست.
+2. دادهٔ فارسی و سیاست متن/split بدون نشت.
+3. مخلوط ساده و سپس FastMSS با alignment و source targets معتبر.
+4. language adaptation کنترل‌شدهٔ SURT.
+5. ORC-WER و تأخیر واقعی؛ code-switching اختیاری و جداگانه.
+6. مدل، recipe، نتایج و محدودیت‌های قابل دفاع.
+
+معیارها: `docs/PERSIAN_SURT_ROADMAP_FA.md`.
+گام بعد: `docs/prompts/PERSIAN_SURT_NEXT_STEP.md`.

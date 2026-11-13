@@ -1,27 +1,18 @@
-# Active artifact dependencies
+# Active dependencies — Persian SURT adaptation
 
 ```mermaid
 flowchart TD
-    A[Main notebook: real LibriSpeech] --> B[Portable mixtures and split manifests]
-    C[Notebook 12: official weights and vocabulary] --> D[Missing engineering: native model connection and feature parity]
-    D --> E[Validated native export]
-    B --> F[Notebook 12: base inference]
-    E --> F
-    F --> G[EvaluationRecord JSONL]
-    B --> H[Notebook 13: optional training]
-    C --> H
-    I[Missing engineering: actual training backend] --> H
-    H --> J[Trained checkpoint]
-    J --> K[Missing engineering: native export]
-    K --> L[Notebook 12: fine-tuned inference]
-    B --> L
-    L --> M[EvaluationRecord JSONL]
-    G --> N[Notebook 14: identical test sets and reports]
-    M --> N
+    A[Completed synthetic GPU smoke] --> B[Official SURT Base: real English baseline]
+    B --> C[Mini Persian: text/tokenizer and vocabulary transfer]
+    C --> D[Real Persian update and checkpoint evidence]
+    D --> E[Chunk-state proof and measured resource budget]
+    E --> F[Licensed Persian data and frozen splits]
+    F --> G[Simple mixtures then aligned FastMSS]
+    G --> H[Controlled Persian adaptation]
+    H --> I[ORC-WER and streaming evaluation]
 ```
 
-WhisperRT, VAD and OSD outputs are not dependencies of SURT inference.
-Data preparation and result-schema handoffs are executable. The native model
-connection, feature/checkpoint parity, training backend and exporter remain
-explicit implementation gaps. For a base-only study, omit training and report
-only the actual base model results. See [the Persian guide](KAGGLE_WORKFLOW_FA.md).
+The current native-export wrappers are an optional integration path. Missing
+local exports do not block the upstream real-speech baseline. Actual chunk-state
+engineering remains necessary before claiming incremental streaming. Generic
+VAD/OSD diagnostics are not prerequisites. See [roadmap](PERSIAN_SURT_ROADMAP_FA.md).

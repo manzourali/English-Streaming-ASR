@@ -32,10 +32,13 @@ See [dependency_freeze.md](dependency_freeze.md) for the declared environment bo
 
 1. A clean Git revision and an audit manifest.
 2. Phase 3 train/validation/test manifests and referenced audio.
-3. Verified WhisperRT model package/checkpoint.
-4. Verified external SURT decoder/checkpoint plus its exact runtime revision.
-5. If applicable, verified fine-tuning checkpoint and external training recipe.
-6. Per-example final records at `outputs/predictions/final_records.jsonl` or an explicitly supplied path.
+3. Verified external SURT decoder/checkpoint plus its exact runtime revision.
+4. Verified Persian adaptation checkpoint/tokenizer, transfer report and external training recipe.
+5. Per-example final records at `outputs/predictions/final_records.jsonl` or an explicitly supplied path.
+
+The user-reported synthetic Kaggle smoke is recorded separately in
+`experiments/surt_smoke_2026-11-12.md`; it does not reproduce Persian results.
+See [artifact retention](KAGGLE_SURT_ARTIFACTS_FA.md) for a single-file log archive.
 
 ## Commands
 

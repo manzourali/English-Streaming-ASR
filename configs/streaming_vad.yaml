@@ -20,11 +20,6 @@ vad:
   frame_ms: 30
   aggressiveness: 2
   threshold: null
-asr:
-  enabled: false
-  model:
-    backend: huggingface
-    name: MLSpeech/WhisperRT-Streaming
 evaluation:
   metrics: [vad_precision, vad_recall, vad_f1, vad_latency]
 output:
