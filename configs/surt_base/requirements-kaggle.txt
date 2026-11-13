@@ -39,7 +39,7 @@ protobuf==7.36.2
 pycparser==3.12
 pypinyin==0.50.0
 PyYAML==6.0.3
-scipy==1.18.1
+scipy==1.13.1
 sentencepiece==0.2.3
 setuptools==84.2.1
 sortedcontainers==2.4.0

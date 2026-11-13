@@ -22,8 +22,8 @@ Actual weight tensor compatibility remains a Kaggle check, not a local success c
 Icefall stays at `f8c8578c9dbfa1183cc949b89b5d21bd33aa2ce1`.
 The exact successful smoke SimpleCutSampler diff and observed package freeze were extracted
 from `checkpoints/surt-smoke-logs-20261113T073310Z.tar.gz` and preserved in ordinary small files.
-The only planned package deviation is NumPy 2.5.4 → 1.26.4 for the NumPy/Torch bridge used by
-the official waveform reader; before/after freeze and a real bridge operation are mandatory.
+The planned package deviations are NumPy 2.5.4 → 1.26.4 for the NumPy/Torch bridge and
+SciPy 1.18.1 → 1.13.1 for compatibility with that NumPy pin; before/after freeze and a real bridge operation are mandatory.
 Core CUDA wheels, Python isolation and recipe versions are unchanged.
 
 The official pretrained entry point gets a recorded patch for strict tensor loading, correct
@@ -37,7 +37,7 @@ Local validation:
 
 ```text
 pytest -q tests/test_surt_base_english.py tests/test_kaggle_surt_fixture.py tests/test_kaggle_workflow.py tests/test_kaggle_environment.py
-25 passed
+26 passed
 Python AST / JSON configs / bash -n for all five notebook cells: OK
 ```
 
@@ -56,3 +56,17 @@ Follow-up: the local Git-update fixture covers a fresh clone and an existing che
 repeat updates, preservation of an ignored downloaded weight, and refusal of tracked edits.
 The Kaggle notebook should run only its five 1A cells; the previous smoke training cells
 are excluded. Cell 1 alone refreshes source without touching the environment or assets.
+
+Kaggle follow-up, 2026-11-13: cell 2 failed at `pip check`, before preflight/model loading:
+`scipy 1.18.1 has requirement numpy<2.8,>=2.0.0, but you have numpy 1.26.4.`
+The earlier NumPy-only repair missed this SciPy constraint. Preserve the observed freeze;
+change the executable requirements to SciPy 1.13.1 and repair only NumPy/SciPy in an existing
+environment, using binary wheels without dependencies. Verify both exact versions and a tiny
+compiled SciPy operation in preflight, alongside the existing NumPy/Torch round trip.
+Official compatibility/wheel sources: https://docs.scipy.org/doc/scipy/dev/toolchain.html
+and https://pypi.org/project/scipy/1.13.1/. Real Kaggle rerun remains pending; no weights,
+audio, scientific packages or GPU stack were downloaded/installed locally for this fix.
+
+Fix validation: 26 CPU contract tests passed; all five Kaggle cells passed bash -n,
+runtime.py passed AST parsing, and git diff --check passed. The new regression check
+keeps fresh-install, existing-environment repair and preflight pins consistent.

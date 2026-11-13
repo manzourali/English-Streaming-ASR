@@ -179,3 +179,37 @@ def test_git_update_preserves_downloads_and_refuses_local_edits(tmp_path, existi
     proc = update()
     assert proc.returncode != 0 and 'Tracked local edits' in proc.stdout
     assert (project / 'version.txt').read_text() == 'my uncommitted edit'
+
+
+def test_numpy_scipy_repair_matches_fresh_environment_and_preflight():
+    """Guard the observed pip-check regression in both environment paths."""
+    from packaging.requirements import Requirement
+    from packaging.specifiers import SpecifierSet
+
+    def requirements(name):
+        return {r.name: str(r.specifier) for line in
+                (ROOT / 'configs/surt_base' / name).read_text().splitlines()
+                if line and not line.startswith('#') for r in [Requirement(line)]}
+
+    fresh = requirements('requirements-kaggle.txt')
+    repair = requirements('requirements-compat.txt')
+    assert repair == {'numpy': '==1.26.4', 'scipy': '==1.13.1'}
+    assert {name: fresh[name] for name in repair} == repair
+    # SciPy 1.13 support table: NumPy >=1.22.4,<2.3; Python >=3.9,<3.13.
+    assert '1.26.4' in SpecifierSet('>=1.22.4,<2.3')
+    assert '3.12.10' in SpecifierSet('>=3.9,<3.13')
+    # The observed SciPy 1.18.1 requirement excludes the chosen NumPy.
+    assert '1.26.4' not in SpecifierSet('>=2.0.0,<2.8')
+    observed = requirements('smoke-observed-freeze.txt')
+    assert observed['scipy'] == '==1.18.1'  # historical evidence stays intact
+    tree = ast.parse((ROOT / 'scripts/surt_base/runtime.py').read_text())
+    preflight = next(n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == 'preflight')
+    expected = next(ast.literal_eval(n.value) for n in ast.walk(preflight)
+                    if isinstance(n, ast.Assign) and any(isinstance(t, ast.Name) and
+                                                        t.id == 'expected' for t in n.targets))
+    assert all(repair[name] == '==' + expected[name] for name in repair)
+    guide = (ROOT / 'docs/KAGGLE_SURT_BASE_ENGLISH_RUNBOOK_FA.md').read_text()
+    existing = guide.split('### سلول 2')[1].split('### سلول 3')[0].split('else\n')[1].split('\nfi')[0]
+    assert '--no-deps --only-binary=:all:' in existing
+    assert 'requirements-compat.txt' in existing
+    assert 'requirements-kaggle.txt' not in existing

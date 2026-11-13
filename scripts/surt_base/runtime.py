@@ -19,7 +19,7 @@ def preflight():
     import ctypes
     ctypes.CDLL('libnvrtc.so.12')
     for name in ('torch', 'torchaudio', 'k2', 'kaldifeat', 'lhotse', 'sentencepiece',
-                 'meeteval.wer.wer', 'soundfile', 'einops', 'train', 'beam_search'):
+                 'meeteval.wer.wer', 'soundfile', 'einops', 'scipy.linalg', 'train', 'beam_search'):
         importlib.import_module(name)
     import numpy as np
     import torch
@@ -29,13 +29,16 @@ def preflight():
     expected = {'torch': '2.3.1+cu121', 'torchaudio': '2.3.1+cu121',
                 'k2': '1.24.4.dev20241030+cuda12.1.torch2.3.1',
                 'kaldifeat': '1.25.4.dev20240606+cuda12.1.torch2.3.1',
-                'lhotse': '1.33.0', 'sentencepiece': '0.2.3', 'meeteval': '0.4.3'}
+                'lhotse': '1.33.0', 'sentencepiece': '0.2.3', 'meeteval': '0.4.3',
+                'numpy': '1.26.4', 'scipy': '1.13.1'}
     actual = {name: importlib.metadata.version(name) for name in expected}
     assert actual == expected, (actual, expected)
     assert torch.cuda.is_available() and torch.cuda.device_count() == 1
     assert torch.version.cuda == '12.1'
     # Unlike the tone fixture, pretrained.py actually uses torch.from_numpy.
     assert torch.from_numpy(np.zeros(4, dtype=np.float32)).numpy().shape == (4,)
+    from scipy.linalg import det
+    assert abs(det(np.eye(2, dtype=np.float64)) - 1.0) < 1e-12
     test = torch.ones(8, device='cuda')
     assert (test + test).sum().item() == 16
     torch.cuda.synchronize()

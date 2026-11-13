@@ -126,10 +126,17 @@ peak allocated/reserved از reset پس از warmup است؛ reserved می‌ت�
 محیط همان Python 3.12.10 ایزولهٔ `surt-venv-py312`، uv 0.8.22، Torch/torchaudio 2.3.1+cu121،
 k2 و kaldifeat wheelهای قبلی، Lhotse 1.33.0، sentencepiece 0.2.3 و meeteval 0.4.3 است.
 محیط موفق موجود اولویت دارد و upgrade نمی‌شود. `smoke-observed-freeze.txt` از آرشیو کاربر استخراج شده؛
-`requirements-kaggle.txt` همان freeze با **تنها تغییر NumPy 2.5.4 به 1.26.4** است: مسیر pretrained
-برخلاف fixture تُن، پل NumPy/Torch را مصرف می‌کند؛ Torch 2.3.1 با ABI نسل ۱ ساخته شده و این pin
-همان انتخاب اولیهٔ runbook موفق است. این اصلاح محافظه‌کارانه در before/after ثبت می‌شود؛
-رفع ناسازگاری پل هنوز باید در preflight Kaggle تأیید شود. در pip/import failure نسخه‌ها را حدسی عوض نکنید.
+`requirements-kaggle.txt` همان freeze با دو تغییر **NumPy 2.5.4 به 1.26.4 و SciPy 1.18.1 به 1.13.1**
+است. مسیر pretrained پل NumPy/Torch را مصرف می‌کند؛ pin NumPy از انتخاب اولیهٔ runbook موفق می‌آید.
+لاگ Kaggle در ۲۰۲۶-۱۱-۱۳ نشان داد SciPy 1.18.1 به NumPy >=2 نیاز دارد و `pip check` متوقف شد؛
+SciPy 1.13.1 با Python 3.12 و NumPy 1.26.4 سازگار است و wheel آمادهٔ Linux x86_64 دارد.
+منابع نسخهٔ اصلاحی: `https://docs.scipy.org/doc/scipy/dev/toolchain.html` و
+`https://pypi.org/project/scipy/1.13.1/`. freeze مشاهده‌شده به‌عنوان شاهد بدون تغییر نگه داشته شده است.
+برای محیط موجود فقط `requirements-compat.txt` با `--no-deps --only-binary=:all:` نصب می‌شود؛
+Torch، k2، kaldifeat و CUDA دوباره نصب نمی‌شوند. before/after، `pip check` و import/عملیات کوچک
+NumPy/SciPy/Torch قبل از model load ثبت و بررسی می‌شوند؛ موفقیت runtime هنوز نیازمند اجرای Kaggle است.
+پس از دریافت این اصلاح از Git، سلول ۲ را در همان session دوباره اجرا کنید؛ پس از OK به ۳، ۴ و ۵ بروید.
+اگر فقط سلول ۲ قبلاً اجرا شده، assets هنوز ساخته نشده‌اند؛ پوشه‌ای را حذف نکنید.
 Mac هیچ GPU stack نصب نمی‌کند. freeze به‌تنهایی lock دارای wheel hash نیست؛ فایل‌های واقعی و freeze نهایی ثبت می‌شوند.
 
 ### سلول 1 — 01-source
@@ -203,8 +210,9 @@ if [ ! -x "$WORK/surt-venv-py312/bin/python" ]; then
 else
   source "$WORK/surt-venv-py312/bin/activate"
   python -m pip freeze > /kaggle/working/surt-base-1a/logs/environment-before.txt
-  # The only deliberate deviation from the observed smoke freeze: NumPy ABI bridge.
-  python -m pip install --no-deps 'numpy==1.26.4'
+  # Repair only the NumPy/Torch bridge and its SciPy dependency.
+  python -m pip install --no-deps --only-binary=:all: \
+    -r "$PROJECT/configs/surt_base/requirements-compat.txt"
 fi
 source "$PROJECT/scripts/surt_base/env.sh"
 python -m pip freeze > "$BASE/logs/pip-freeze.txt"
