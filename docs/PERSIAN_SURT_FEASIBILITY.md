@@ -2,7 +2,7 @@
 
 Updated 2026-11-13. The current research target is Persian language adaptation
 of SURT 2.0 for overlapping voices. The [roadmap](PERSIAN_SURT_ROADMAP_FA.md)
-and [immediate prompt](prompts/PERSIAN_SURT_NEXT_STEP.md) define current work.
+and [mini Persian runbook](KAGGLE_SURT_MINI_PERSIAN_RUNBOOK_FA.md) define current work.
 
 ## What passed
 
@@ -13,11 +13,16 @@ saved tensors. This establishes infrastructure execution on synthetic tones.
 The complete artifact archive and its hashes have not been reviewed locally.
 See [recorded evidence](experiments/surt_smoke_2026-11-12.md).
 
+Gate 1A is now accepted: all 44 review-package hashes match, the official Base
+checkpoint loaded strictly, and both English clips plus their mixture decoded.
+The user confirmed auditory/reference/two-branch review on 2026-11-13.
+Bounded clean PI-WER counts: 0/8, 1/12; mixture: 4/20. See the
+[1A review and 1B preparation record](experiments/surt_mini_1b_preparation_2026-11-13.md).
+
 ## What has not passed
 
 | Gate | Remaining evidence |
 | --- | --- |
-| Real English baseline | Official pretrained SURT Base plus its own tokenizer on actual speech; synthetic checkpoint is not suitable |
 | Mini Persian transfer | Real Persian audio/text, normalization/train-only vocabulary, semantic token mapping and compatible parameter transfer/reset |
 | Persian update | Actual recipe feature/source targets and HEAT; finite forward/backward/update; checkpoint and gradient checks |
 | Incremental streaming | Persistent bounded state, chunk/EOF behavior, context-compatible reference, real latency measurements |
@@ -76,8 +81,10 @@ comparing simulators. See the [roadmap sources](PERSIAN_SURT_ROADMAP_FA.md).
 
 ## Next action
 
-Prepare/run only the bounded [official pretrained English baseline](prompts/PERSIAN_SURT_NEXT_STEP.md).
+Run only the bounded [mini Persian 1B procedure](KAGGLE_SURT_MINI_PERSIAN_RUNBOOK_FA.md)
+in Kaggle, after pushing the prepared code yourself. Its first cell updates the
+checkout to the explicit pushed SHA. Local tests do not pass gate 1B.
 Then use [the gated follow-up prompts](prompts/PERSIAN_SURT_FOLLOWUPS.md) for
-mini Persian, stateful execution/resources, corpus preparation, adaptation and
-evaluation. Keep all measurements explicitly unmeasured until actual logs
+stateful execution/resources, corpus preparation, adaptation and evaluation.
+Keep all unexecuted measurements explicitly unmeasured until actual logs
 exist. Archive current logs using [this single-file procedure](KAGGLE_SURT_ARTIFACTS_FA.md).

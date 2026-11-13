@@ -6,9 +6,9 @@
 
 ۲. لاگ‌ها را به یک archive تبدیل و خروجی نسخهٔ Kaggle را حفظ کنید. دانلود محیط چندگیگی روی Mac یا commit فایل‌های وزن لازم نیست: [دستور دقیق](KAGGLE_SURT_ARTIFACTS_FA.md).
 
-۳. اکنون [پرامپت baseline انگلیسی با وزن رسمی SURT Base](prompts/PERSIAN_SURT_NEXT_STEP.md) اجرا شود. این گام باید به recipe واقعی Icefall متصل باشد؛ checkpoint مصنوعی جای وزن آماده نیست و native exporter ناقص پروژه نباید baseline را متوقف کند.
+۳. گام 1A با بررسی بستهٔ واقعی، هش‌ها، قرارداد strict و تأیید شنیداری کاربر در ۲۰۲۶-۱۱-۱۳ پذیرفته شد؛ [گزارش شواهد](experiments/surt_mini_1b_preparation_2026-11-13.md). baseline انگلیسی whole-batch است و ادعای استریم افزایشی ندارد.
 
-۴. پس از بررسی خروجی واقعی، mini فارسی: چند کلیپ مجاز، سیاست متن و tokenizer، انتقال واژگان/وزن، source features و یک update واقعی. سپس رابط استریم قطعه‌ای و هزینهٔ منابع بررسی شود. تنها بعد از عبور gateها وارد تولید انبوه داده و آموزش طولانی شوید. [پرامپت‌های ادامه](prompts/PERSIAN_SURT_FOLLOWUPS.md).
+۴. اکنون [runbook مستقل mini فارسی 1B](KAGGLE_SURT_MINI_PERSIAN_RUNBOOK_FA.md)، با به‌روزرسانی ریپو در سلول اول، اجرا شود. آماده‌سازی کد محلی است؛ دریافت هشت کلیپ و یک update واقعی فقط در Kaggle. gate 1B تا بررسی archive واقعی باز است. سپس رابط استریم و هزینه بررسی شود؛ تولید انبوه داده و آموزش طولانی هنوز مجاز نیست. [پرامپت‌های ادامه](prompts/PERSIAN_SURT_FOLLOWUPS.md).
 
 ۵. اجرای مدل و آموزش سنگین در Kaggle؛ کار محلی محدود به سورس، metadata، راهنما و تست سبک. خروجی UI خلاصه و لاگ کامل فایل باشد. محیط اصلی Python 3.13/cu128 با venv ایزولهٔ recipe یکی نیست؛ [راهنمای محیط](KAGGLE_ENVIRONMENT.md).
 

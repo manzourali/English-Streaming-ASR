@@ -4,9 +4,11 @@
 
 ## ۱B — mini فارسی و انتقال vocabulary
 
-«گام ۱A را از لاگ/هش/checkpoint بررسی کن. سپس فقط mini فارسی را آماده کن: تعداد اندک کلیپ مجاز با متن/شناسهٔ ناشناس گوینده و split بدون نشت، قواعد یکسان فارسی/لاتین، BPE فقط روی train، سنجش unknown و round-trip متن فارسی–لاتین. دادهٔ تازه را در مقیاس بزرگ دانلود نکن. وضعیت دسترسی داده را بررسی کن و اگر متن/صوت لازم در منابع متصل نیست، قرارداد manifest و سؤال دقیقِ منبع داده را ارائه بده؛ داده نساز.
+گام ۱A را از لاگ/هش/checkpoint بررسی کن. سپس فقط mini فارسی را آماده کن: تعداد اندک کلیپ مجاز با متن/شناسهٔ ناشناس گوینده و split بدون نشت، قواعد یکسان فارسی/لاتین، BPE فقط روی train، سنجش unknown و round-trip متن فارسی–لاتین. برای منبع دادهٔ mini فارسی، صریحاً از دیتاست Hugging Face با شناسهٔ aliyzd95/common_voice_22_0_fa استفاده کن؛ دادهٔ تازه را در مقیاس بزرگ دانلود نکن و تنها یک زیرمجموعهٔ بسیار کوچک (Slice/Streaming) از آن بارگذاری شود. از ستون‌های audio (نرخ 16kHz)، sentence و شناسهٔ گوینده (client_id) برای جلوگیری از data leakage گوینده استفاده شود. وضعیت دسترسی داده را بررسی کن و اگر متن/صوت لازم در منابع متصل نیست، قرارداد manifest و سؤال دقیقِ منبع داده را ارائه بده؛ داده نساز.
 
-checkpoint رسمی و token-ID semantics را بررسی و گزارش انتقال وزن بنویس. embedding، joiner output و CTC وابسته به واژگان تازه حتی با shape یکسان به انتقال معنایی نیاز دارند یا باید ریست شوند؛ optimizer قدیمی برای پارامترهای تازه بازاستفاده نشود. masked-source features، HEAT و ورودی K2SurtDataset را از recipe دقیق پیاده/تطبیق بده. یک forward/backward/update با loss و gradient متناهی، تغییر وزن، save/reload و یک decode کوچک را روی Kaggle قابل اجرا کن. step count، GPU peak memory و زمان ثبت شوند. در صورت نیاز یک آزمون overfit محدود فقط روی train، با سقف روشن، پیشنهاد کن؛ از یک optimizer step ادعای یادگیری فارسی نکن. گزارش نهایی کوتاه و gate ۱B صریح باشد.»
+checkpoint رسمی و token-ID semantics را بررسی و گزارش انتقال وزن بنویس. embedding، joiner output و CTC وابسته به واژگان تازه حتی با shape یکسان به انتقال معنایی نیاز دارند یا باید ریست شوند؛ optimizer قدیمی برای پارامترهای تازه بازاستفاده نشود. masked-source features، HEAT و ورودی K2SurtDataset را از recipe دقیق پیاده/تطبیق بده. یک forward/backward/update با loss و gradient متناهی، تغییر وزن، save/reload و یک decode کوچک را روی Kaggle قابل اجرا کن. step count، GPU peak memory و زمان ثبت شوند. در صورت نیاز یک آزمون overfit محدود فقط روی train، با سقف روشن، پیشنهاد کن؛ از یک optimizer step ادعای یادگیری فارسی نکن.
+
+در گزارش نهایی صریحاً مستند کن که دیتاست aliyzd95/common_voice_22_0_fa صرفاً یک subset موقت برای اعتبارسنجی پایپلاین و فاز صفر است و در فاز آموزش اصلی (Full Training) از نسخهٔ اصلی و جامع Common Voice 27 (از Mozilla Data Collective) استفاده خواهد شد. گزارش نهایی کوتاه و gate ۱B صریح باشد.
 
 ## ۱C — اثبات استریم و برآورد منابع
 

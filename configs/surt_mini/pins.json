@@ -1,0 +1,29 @@
+{
+  "dataset_repo": "aliyzd95/common_voice_22_0_fa",
+  "dataset_revision": "5dc7ac366099292d4fbf079c99d58c1b2fba602d",
+  "config": "default",
+  "declared_license": "Public Domain, CC-0 (README; no structured license field)",
+  "provenance": "Unofficial community-filtered subset, not an official Mozilla release",
+  "observed_utc_date": "2026-11-13",
+  "splits": {"train": 29789, "validation": 10676, "test": 10676},
+  "schema": {"audio": "Audio(sampling_rate=16000); actual file rate must be checked", "sentence": "string", "client_id": "string", "path": "string", "sentence_id": "string"},
+  "limits": {"rows": 600, "seconds": 300, "network_bytes": 33554432, "cache_bytes": 67108864, "clip_bytes": 2097152, "audio_attempts": 24, "clips": 8, "audio_seconds": 120, "min_clip_seconds": 1, "max_clip_seconds": 10},
+  "mini_split_counts": {"train": 4, "validation": 2, "test": 2},
+  "metadata_offsets": [0, 100, 500, 1000],
+  "rows_per_page": 50,
+  "seed": 20261113,
+  "vocab_size_requested": 128,
+  "loss_scales_at_step_zero": {"simple_rnnt": 1.0, "pruned_rnnt": 0.1, "ctc": 0.2, "heat": 0.001},
+  "optimizer": {"name": "Adam", "lr": 0.0001, "steps": 1, "reuse_checkpoint_optimizer": false},
+  "source_sha256": {
+    "egs/libricss/SURT/dprnn_zipformer/model.py": "f16830b5c687f6f55c755358f6011db9a1698535994e0fdffa3d4bc00f86c40f",
+    "egs/libricss/SURT/dprnn_zipformer/beam_search.py": "d7765b98d65d10c60dd884a09ab9cf94cbed0c9b1558ee67d8ed8123d2d63d8d",
+    "egs/libricss/SURT/local/compute_fbank_lsmix.py": "d08568be11bbe9c8e62ca6e6ab652a1ba9096bbbdec4d79cd6e51b5db4ac0099",
+    "egs/libricss/SURT/local/add_source_feats.py": "0659320b226ce6e2d1ef74bc17c06fc97b718ef55d06053e32735ab2d484b82a"
+  },
+  "sources": [
+    "https://huggingface.co/api/datasets/aliyzd95/common_voice_22_0_fa",
+    "https://huggingface.co/datasets/aliyzd95/common_voice_22_0_fa/raw/5dc7ac366099292d4fbf079c99d58c1b2fba602d/README.md",
+    "https://datasets-server.huggingface.co/splits?dataset=aliyzd95/common_voice_22_0_fa"
+  ]
+}
