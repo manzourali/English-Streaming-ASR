@@ -195,6 +195,7 @@ pin دقیق تمام بسته‌ها حفظ است؛ grpcio وابستگی کم
 با همان الگوی log/trap سلول ۲ اجرا کنید (stdout/stderr کامل در فایل بماند):
 
 ```bash
+%%bash
 source /kaggle/working/English-Streaming-ASR/scripts/surt_mini/env.sh
 python "$PROJECT/scripts/surt_base/dependencies.py" --repair-grpcio \
   --report "$MINI_RUN/logs/grpcio-repair-$(date -u +%Y%m%dT%H%M%S)-$$.txt"

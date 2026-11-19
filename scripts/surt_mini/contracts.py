@@ -29,7 +29,7 @@ def file_hash(path):
 
 def dump(path, value):
     content = json.dumps(value, ensure_ascii=False, indent=2, allow_nan=False) + '\n'
-    with Path(path).open('x') as stream:
+    with Path(path).open('w') as stream:
         stream.write(content)
 
 

@@ -180,7 +180,7 @@ def test_download_budget_and_cache_are_bounded(mini_modules, monkeypatch, tmp_pa
         budget.get('https://example/deadline', 10)
 
 
-@pytest.mark.parametrize('status', [502, 503, 504])
+@pytest.mark.parametrize('status', [429, 500, 502, 503, 504])
 def test_metadata_transient_http_retries_are_bounded(mini_modules, monkeypatch, tmp_path, status):
     fetch = mini_modules.fetch
     budget = fetch.Budget(tmp_path / 'cache')
@@ -203,24 +203,103 @@ def test_metadata_transient_http_retries_are_bounded(mini_modules, monkeypatch, 
     assert len(budget.report()['http_failures']) == 2
 
 
-@pytest.mark.parametrize('status, cache_key, expected', [(502, None, 3), (403, None, 1),
-                                                       (404, None, 1), (502, 'audio', 1)])
+@pytest.mark.parametrize('status, cache_key, expected', [(502, None, 4), (429, None, 4),
+                                                       (400, None, 1), (403, None, 1),
+                                                       (404, None, 1), (502, 'audio', 4)])
 def test_http_failure_stops_without_fallback(mini_modules, monkeypatch, tmp_path, status, cache_key, expected):
     fetch = mini_modules.fetch
     budget = fetch.Budget(tmp_path / 'cache')
-    urls = []
+    urls, waits = [], []
 
     def open_url(url, timeout):
         urls.append(url)
         raise fetch.urllib.error.HTTPError(url, status, 'failure', {}, io.BytesIO(b'error'))
 
     monkeypatch.setattr(fetch.urllib.request, 'urlopen', open_url)
-    monkeypatch.setattr(fetch.time, 'sleep', lambda seconds: None)
+    monkeypatch.setattr(fetch.time, 'sleep', waits.append)
     with pytest.raises(RuntimeError, match=f'HTTP {status}.*new RUN_ID'):
         budget.get('https://example/resource', 100, cache_key)
     assert urls == ['https://example/resource'] * expected
     assert budget.http_requests == expected and budget.bytes == 0
+    assert waits == ([1, 2, 4] if expected == 4 else [])
     assert not list((tmp_path / 'cache').iterdir())
+
+
+@pytest.mark.parametrize('kind', ['timeout', 'connection', 'urlerror'])
+def test_network_error_then_success(mini_modules, monkeypatch, tmp_path, capsys, kind):
+    fetch = mini_modules.fetch
+    budget = fetch.Budget(tmp_path / 'cache')
+    errors = {'timeout': TimeoutError('read timed out'),
+              'connection': ConnectionResetError('connection reset'),
+              'urlerror': fetch.urllib.error.URLError(TimeoutError('read timed out'))}
+    waits, timeouts = [], []
+
+    def open_url(url, timeout):
+        timeouts.append(timeout)
+        if len(timeouts) == 1:
+            raise errors[kind]
+        return io.BytesIO(b'complete')
+
+    monkeypatch.setattr(fetch.urllib.request, 'urlopen', open_url)
+    monkeypatch.setattr(fetch.time, 'sleep', waits.append)
+    assert budget.get('https://example/rows', 100) == b'complete'
+    assert waits == [1] and budget.http_requests == 2
+    assert all(0 < timeout <= 60 for timeout in timeouts)
+    failure = budget.report()['http_failures'][0]
+    assert failure['url'] == 'https://example/rows'
+    assert failure['exception'] == type(errors[kind]).__name__
+    assert failure['attempt'] == 1 and failure['retry']
+    assert failure['duration_seconds'] >= 0
+    assert json.dumps(failure) in capsys.readouterr().out
+
+
+@pytest.mark.parametrize('failure', ['timeout', 'short_response'])
+def test_partial_response_is_not_cached(mini_modules, monkeypatch, tmp_path, failure):
+    fetch = mini_modules.fetch
+    budget = fetch.Budget(tmp_path / 'cache')
+    calls = []
+
+    class Partial(io.BytesIO):
+        headers = {'Content-Length': '100'}
+
+        def read(self, size):
+            if failure == 'timeout' and self.tell():
+                raise TimeoutError('read timed out after partial data')
+            return super().read(size)
+
+    def open_url(url, timeout):
+        calls.append(url)
+        assert not (budget.cache / 'audio').exists()
+        return Partial(b'partial') if len(calls) == 1 else io.BytesIO(b'complete')
+
+    monkeypatch.setattr(fetch.urllib.request, 'urlopen', open_url)
+    monkeypatch.setattr(fetch.time, 'sleep', lambda seconds: None)
+    assert budget.get('https://example/audio', 1000, 'audio') == b'complete'
+    assert len(calls) == 2
+    assert (budget.cache / 'audio').read_bytes() == b'complete'
+    assert budget.bytes == len(b'partialcomplete')
+
+
+def test_request_timeout_is_capped_by_remaining_budget(mini_modules, monkeypatch, tmp_path):
+    fetch = mini_modules.fetch
+    now = [100.0]
+    monkeypatch.setattr(fetch.time, 'monotonic', lambda: now[0])
+    budget = fetch.Budget(tmp_path / 'cache')
+    now[0] += contracts.PINS['limits']['seconds'] - 0.5
+    timeouts, waits = [], []
+
+    def open_url(url, timeout):
+        timeouts.append(timeout)
+        now[0] += timeout
+        raise TimeoutError('remaining budget elapsed')
+
+    monkeypatch.setattr(fetch.urllib.request, 'urlopen', open_url)
+    monkeypatch.setattr(fetch.time, 'sleep', waits.append)
+    with pytest.raises(RuntimeError, match='wall-time budget'):
+        budget.get('https://example/rows', 100)
+    assert timeouts == [0.5] and waits == []
+    assert budget.http_requests == 1
+    assert not budget.http_failures[0]['retry']
 
 
 def test_retry_preserves_original_deadline(mini_modules, monkeypatch, tmp_path):

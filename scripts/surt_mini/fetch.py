@@ -32,26 +32,36 @@ class Budget:
             raise RuntimeError('Persistent cache budget exhausted; preserve it for review')
 
     def get(self, url, limit, cache_key=None):
-        attempts = 3 if cache_key is None else 1
+        attempts = 4
         for attempt in range(attempts):
             self.check()
+            started = time.monotonic()
             try:
                 return self.get_once(url, limit, cache_key)
-            except urllib.error.HTTPError as error:
-                status = error.code
-                error.close()
-                retry = status in (502, 503, 504) and attempt + 1 < attempts
-                self.http_failures.append(dict(status=status, attempt=attempt + 1, retry=retry,
-                                               resource='metadata' if cache_key is None else 'audio'))
+            except (urllib.error.URLError, TimeoutError, ConnectionError) as error:
+                status = error.code if isinstance(error, urllib.error.HTTPError) else None
+                if status is not None:
+                    error.close()
+                transient = status is None or status == 429 or 500 <= status < 600
+                remaining = PINS['limits']['seconds'] - (time.monotonic() - self.begin)
+                retry = transient and attempt + 1 < attempts and remaining > 0
+                failure = dict(url=url, status=status, exception=type(error).__name__,
+                               attempt=attempt + 1, max_attempts=attempts,
+                               duration_seconds=time.monotonic() - started, retry=retry,
+                               resource='metadata' if cache_key is None else 'audio')
+                self.http_failures.append(failure)
+                print('HTTP request failed: ' + json.dumps(failure), flush=True)
+                self.check()
                 if not retry:
+                    reason = f'HTTP {status}' if status is not None else type(error).__name__
                     raise RuntimeError(
-                        f'HTTP {status} while fetching {"metadata" if cache_key is None else "audio"}; '
+                        f'{reason} while fetching {failure["resource"]}; '
                         f'stopped after {attempt + 1} request(s). Preserve this run, archive it '
                         'with cell 6, then use a new RUN_ID for another attempt; no source fallback.'
                     ) from error
-                delay = attempt + 1
-                print(f'Metadata HTTP {status}; retry {attempt + 1}/2 in {delay}s within original budget', flush=True)
-                self.check()
+                delay = min(2 ** attempt, PINS['limits']['seconds'] - (time.monotonic() - self.begin))
+                if delay <= 0:
+                    raise RuntimeError('Download wall-time budget exhausted') from error
                 time.sleep(delay)
                 self.check()
 
@@ -67,7 +77,10 @@ class Budget:
         if self.bytes >= PINS['limits']['network_bytes']:
             raise RuntimeError('Transport byte budget exhausted')
         self.http_requests += 1
-        with urllib.request.urlopen(url, timeout=min(20, max(1, PINS['limits']['seconds'] - (time.monotonic() - self.begin)))) as response:
+        timeout = min(60, PINS['limits']['seconds'] - (time.monotonic() - self.begin))
+        if timeout <= 0:
+            raise RuntimeError('Download wall-time budget exhausted')
+        with urllib.request.urlopen(url, timeout=timeout) as response:
             while True:
                 self.check()
                 remaining = min(limit - size, PINS['limits']['network_bytes'] - self.bytes)
@@ -81,6 +94,10 @@ class Budget:
                 if not block:
                     break
                 chunks.append(block)
+            content_length = getattr(response, 'headers', {}).get('Content-Length')
+            if content_length is not None and size != int(content_length):
+                raise ConnectionError('Incomplete HTTP response; Content-Length mismatch')
+        self.check()
         value = b''.join(chunks)
         if cached:
             current = sum(path.stat().st_size for path in self.cache.rglob('*') if path.is_file())
