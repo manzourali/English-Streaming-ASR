@@ -33,7 +33,9 @@ class MockFrameExtractor:
                          for i in range(count)], dtype=np.float32)
 
 
-@pytest.mark.parametrize('samples', [0, 1, 79, 80, 159, 160, 399, 400, 5119, 5120, 5361, 16001])
+@pytest.mark.parametrize('samples', [0, 1, 79, 80, 119, 120, 139, 140, 159, 160,
+                                   239, 240, 279, 280, 399, 400, 401, 960,
+                                   5119, 5120, 5361, 16001])
 def test_buffered_feature_partition_reset_eof(samples):
     frontend = load('frontend')
     extractor = MockFrameExtractor()
@@ -67,6 +69,85 @@ def test_packet_budget_and_nonfinite_are_rejected():
     for packet in (np.zeros(3201), np.array([np.nan]), np.zeros((2, 2))):
         with pytest.raises(ValueError, match='packet budget'):
             stream.push(packet)
+
+
+def reflected_windows(wave):
+    """Independent Kaldi ExtractWindow index rule; no numpy padding oracle."""
+    windows = []
+    for frame in range((len(wave) + 80) // 160):
+        values = []
+        for sample in range(frame * 160 - 120, frame * 160 + 280):
+            while sample < 0 or sample >= len(wave):
+                sample = -sample - 1 if sample < 0 else 2 * len(wave) - 1 - sample
+            values.append(wave[sample])
+        windows.append(values)
+    return np.asarray(windows, dtype=np.float32).reshape(-1, 400)
+
+
+class WindowCheckingExtractor:
+    """Check every retained frame's samples and reject undersized backend input."""
+    def __init__(self, wave):
+        self.reference = reflected_windows(wave)
+        self.calls = []
+
+    def extract(self, wave, rate):
+        assert rate == 16000 and len(wave) >= 400
+        self.calls.append(len(wave))
+        actual = reflected_windows(wave)
+        assert np.array_equal(actual[:len(self.reference)], self.reference)
+        # Identifiable frame indices expose incorrect slicing/counts.
+        return np.repeat(np.arange(len(actual), dtype=np.float32)[:, None], 80, axis=1)
+
+
+@pytest.mark.parametrize('samples', [0, 1, 79, 80, 81, 119, 120, 139, 140, 159,
+                                   160, 239, 240, 279, 280, 399, 400, 401, 960])
+def test_short_extraction_matches_repeated_kaldi_reflection(samples):
+    frontend = load('frontend')
+    wave = np.arange(samples, dtype=np.float32)
+    original = wave.copy()
+    extractor = WindowCheckingExtractor(wave)
+    actual = frontend.extract_with_kaldi_edges(extractor, wave)
+    frames = (samples + 80) // 160
+    assert actual.shape == (frames, 80)
+    assert np.array_equal(actual[:, 0], np.arange(frames, dtype=np.float32))
+    assert np.array_equal(wave, original)
+    assert len(extractor.calls) == int(frames > 0)
+    if samples >= 400:
+        assert extractor.calls == [samples]
+
+
+def test_stream_buffers_until_first_complete_nonfinal_frame():
+    frontend = load('frontend')
+
+    class RecordingExtractor(MockFrameExtractor):
+        def __init__(self):
+            self.calls = []
+
+        def extract(self, wave, rate):
+            assert len(wave) >= 400
+            self.calls.append(len(wave))
+            return super().extract(wave, rate)
+
+    wave = np.arange(280, dtype=np.float32)
+    extractor = RecordingExtractor()
+    stream = frontend.BufferedFbank(extractor)
+    assert len(stream.push(wave[:80])) == 0
+    assert len(stream.push(wave[80:279])) == 0
+    assert extractor.calls == []
+    first = stream.push(wave[279:])
+    assert first.shape == (1, 80)
+    tail = stream.push([], final=True)
+    assert np.array_equal(np.concatenate((first, tail)), MockFrameExtractor().extract(wave, 16000))
+    assert stream.push([], final=True).shape == (0, 80)
+
+
+def test_short_extractor_exception_is_not_suppressed():
+    class BrokenExtractor:
+        def extract(self, wave, rate):
+            raise RuntimeError('backend failure')
+
+    with pytest.raises(RuntimeError, match='backend failure'):
+        load('frontend').extract_with_kaldi_edges(BrokenExtractor(), np.arange(80))
 
 
 def test_restore_reuses_verified_canonical_without_merging(monkeypatch, tmp_path):

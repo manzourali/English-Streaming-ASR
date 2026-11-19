@@ -1,7 +1,7 @@
 """Kaggle-only component evidence, explicitly separate from full-model streaming."""
 import time
 
-from frontend import BufferedFbank
+from frontend import BufferedFbank, extract_with_kaldi_edges
 from support import CANONICAL, PINS, dump, read
 
 
@@ -68,10 +68,10 @@ def frontend_probe(run):
     if wave_for_stress is None:
         raise RuntimeError('Missing real train mixture')
     # Boundary cases are prefixes of the approved train audio, not new ASR evidence.
-    for length in (0, 1, 79, 80, 159, 160, 399, 400, 5119, 5120, 5361):
+    for length in (0, 1, 79, 80, 119, 120, 139, 140, 159, 160, 239, 240,
+                   279, 280, 399, 400, 401, 960, 5119, 5120, 5361):
         wave = wave_for_stress[:length]
-        reference = (extractor.extract(wave, 16000) if (len(wave) + 80) // 160
-                     else np.empty((0, 80), dtype=np.float32))
+        reference = extract_with_kaldi_edges(extractor, wave)
         compare(f'train-prefix-{length}', wave, reference)
     stored = []
     for cut in CutSet.from_file(CANONICAL / 'features/train.jsonl.gz'):
@@ -93,6 +93,8 @@ def frontend_probe(run):
         raise RuntimeError('Feature stress test lost or duplicated frames')
     stress_compute_seconds = time.perf_counter() - begin
     report = dict(status='component_checks_completed', config=config, comparisons=comparisons,
+                  short_input_policy='Kaldi repeated symmetric edge reflection; retain original '
+                                     '(samples+80)//160 frames; nonfinal first frame waits for 280 samples',
                   stored_1b_comparisons=stored,
                   stress=dict(seconds_of_repeated_train_audio=PINS['stress_seconds'],
                               emitted_frames=emitted, peak_buffer_samples=stream.peak_samples,

@@ -5,6 +5,38 @@ extractor recomputes only a bounded packet/overlap buffer, not the recording.
 """
 
 
+def extract_with_kaldi_edges(extractor, wave, sampling_rate=16000):
+    """Extract the fixed 1B fbank contract, including very short final audio.
+
+    Requires 16 kHz, 400/160 sample windows/shifts, snip_edges=False and
+    dither=0, as checked against the reviewed feature contract by the probe.
+    Kaldi reflects edges with endpoint repetition, including repeated
+    reflections when the signal is shorter than a window. Kaldifeat's offline
+    striding path cannot construct that window for some very short signals.
+    Extend only these signals by the same symmetric reflection, then retain
+    exactly the original duration's frames. No frame reads the artificial end
+    of this extension. Normal recordings use the original extractor unchanged.
+    """
+    import numpy as np
+
+    wave = np.asarray(wave, dtype=np.float32)
+    if sampling_rate != 16000 or wave.ndim != 1 or not np.isfinite(wave).all():
+        raise ValueError('Expected finite mono audio at 16000 Hz')
+    if len(wave) >= 400:
+        return extractor.extract(wave, sampling_rate)
+    frames = (len(wave) + 80) // 160
+    if frames == 0:
+        return np.empty((0, 80), dtype=np.float32)
+    # Frame i covers [i*160-120, i*160+280). Cover the last retained
+    # frame and provide at least one full window to the offline backend.
+    needed = max(400, (frames - 1) * 160 + 280)
+    extended = np.pad(wave, (0, needed - len(wave)), mode='symmetric')
+    features = extractor.extract(extended, sampling_rate)
+    if len(features) < frames:
+        raise RuntimeError('Kaldi short-input framing contract mismatch')
+    return features[:frames].copy()
+
+
 class BufferedFbank:
     shift = 160
     window = 400
@@ -38,7 +70,7 @@ class BufferedFbank:
         available = ((self.total + self.shift // 2) // self.shift if final else
                      max(0, (self.total - self.first_end) // self.shift + 1))
         if available > self.emitted:
-            computed = self.extractor.extract(self.buffer, 16000)
+            computed = extract_with_kaldi_edges(self.extractor, self.buffer)
             start = self.emitted - self.base // self.shift
             stop = available - self.base // self.shift
             if len(computed) < stop:
