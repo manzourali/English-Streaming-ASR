@@ -320,9 +320,10 @@ def test_retry_preserves_original_deadline(mini_modules, monkeypatch, tmp_path):
 
 
 @pytest.mark.parametrize('split', ['train', 'validation', 'test'])
-def test_viewer_asset_preserves_pinned_path(mini_modules, split):
+@pytest.mark.parametrize('root', ['assets', 'cached-assets'])
+def test_viewer_asset_preserves_pinned_path(mini_modules, split, root):
     fetch = mini_modules.fetch
-    path = (f"/assets/{contracts.PINS['dataset_repo']}/--/{contracts.PINS['dataset_revision']}"
+    path = (f"/{root}/{contracts.PINS['dataset_repo']}/--/{contracts.PINS['dataset_revision']}"
             f"/--/{contracts.PINS['config']}/{split}/100/audio/clip.mp3")
     parsed = fetch.viewer_asset('https://datasets-server.huggingface.co' + path + '?Signature=secret', split, 100)
     assert parsed.path == path
@@ -330,7 +331,8 @@ def test_viewer_asset_preserves_pinned_path(mini_modules, split):
 
 
 @pytest.mark.parametrize('field', ['scheme', 'hostname', 'revision', 'config', 'split', 'row'])
-def test_viewer_asset_mismatch_diagnostics(mini_modules, field):
+@pytest.mark.parametrize('root', ['assets', 'cached-assets'])
+def test_viewer_asset_mismatch_diagnostics(mini_modules, field, root):
     fetch = mini_modules.fetch
     scheme = 'http' if field == 'scheme' else 'https'
     hostname = 'other.example' if field == 'hostname' else 'datasets-server.huggingface.co'
@@ -338,7 +340,7 @@ def test_viewer_asset_mismatch_diagnostics(mini_modules, field):
     config = 'other' if field == 'config' else contracts.PINS['config']
     split = 'test' if field == 'split' else 'train'
     row = 101 if field == 'row' else 100
-    path = f"/assets/{contracts.PINS['dataset_repo']}/--/{revision}/--/{config}/{split}/{row}/audio/clip.mp3"
+    path = f"/{root}/{contracts.PINS['dataset_repo']}/--/{revision}/--/{config}/{split}/{row}/audio/clip.mp3"
     url = f'{scheme}://{hostname}{path}?Signature=secret#private-fragment'
     with pytest.raises(RuntimeError, match='Viewer asset revision/path mismatch: ') as caught:
         fetch.viewer_asset(url, 'train', 100)
@@ -349,7 +351,24 @@ def test_viewer_asset_mismatch_diagnostics(mini_modules, field):
     assert details['actual_hostname'] == hostname
     assert details['original_split'] == 'train' and details['row_index'] == 100
     assert contracts.PINS['dataset_revision'] in details['expected_path_prefix']
+    assert len(details['expected_path_prefixes']) == 2
     assert 'Signature' not in message and 'secret' not in message and 'private-fragment' not in message
+
+
+def test_viewer_asset_accepts_kaggle_cached_asset_regression(mini_modules):
+    # Exact routing fields from the failed mini-20261119-c run, not a live request.
+    url = ('https://datasets-server.huggingface.co/cached-assets/'
+           'aliyzd95/common_voice_22_0_fa/--/5dc7ac366099292d4fbf079c99d58c1b2fba602d/'
+           '--/default/train/14/audio/audio.mp3')
+    assert mini_modules.fetch.viewer_asset(url, 'train', 14).geturl() == url
+
+
+@pytest.mark.parametrize('root', ['other-assets', 'cached-assets-extra', 'assets-extra'])
+def test_viewer_asset_rejects_unknown_root(mini_modules, root):
+    path = (f"/{root}/{contracts.PINS['dataset_repo']}/--/{contracts.PINS['dataset_revision']}"
+            f"/--/{contracts.PINS['config']}/train/14/audio/audio.mp3")
+    with pytest.raises(RuntimeError, match='Viewer asset revision/path mismatch'):
+        mini_modules.fetch.viewer_asset('https://datasets-server.huggingface.co' + path, 'train', 14)
 
 
 def test_repository_change_stops_before_audio(mini_modules):

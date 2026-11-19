@@ -131,7 +131,9 @@ def repository(budget):
 
 def viewer_asset(url, original_split, row_index):
     parsed = urllib.parse.urlparse(url)
-    expected = f"/assets/{PINS['dataset_repo']}/--/{PINS['dataset_revision']}/--/{PINS['config']}/{original_split}/{row_index}/audio/"
+    suffix = f"{PINS['dataset_repo']}/--/{PINS['dataset_revision']}/--/{PINS['config']}/{original_split}/{row_index}/audio/"
+    # Kaggle viewer responses also use /cached-assets/ with the same pinned suffix.
+    expected = tuple(f'/{root}/{suffix}' for root in ('assets', 'cached-assets'))
     mismatches = []
     if parsed.scheme != 'https':
         mismatches.append('scheme')
@@ -144,7 +146,8 @@ def viewer_asset(url, original_split, row_index):
         details = dict(mismatches=mismatches, actual_scheme=parsed.scheme,
                        actual_hostname=parsed.hostname, actual_path=parsed.path,
                        expected_scheme='https', expected_hostname='datasets-server.huggingface.co',
-                       expected_path_prefix=expected, original_split=original_split, row_index=row_index)
+                       expected_path_prefix=expected[0], expected_path_prefixes=expected,
+                       original_split=original_split, row_index=row_index)
         raise RuntimeError('Viewer asset revision/path mismatch: ' + json.dumps(details))
     return parsed
 
