@@ -41,16 +41,31 @@ def kaggle_only():
 
 def verify_mini(directory):
     result = read(directory / 'result.json')
-    if (result['optimizer_steps'] != 1 or result['strict_reload'] is not True
-            or result['checkpoint_sha256'] != PINS['checkpoint_sha256']
-            or result['tokenizer_sha256'] != PINS['tokenizer_sha256']):
-        raise RuntimeError('Not the reviewed 1B checkpoint/tokenizer contract')
+    expected_contract = dict(optimizer_steps=1, strict_reload=True,
+                             checkpoint_sha256=PINS['checkpoint_sha256'],
+                             tokenizer_sha256=PINS['tokenizer_sha256'])
+    mismatches = []
+    for key, expected in expected_contract.items():
+        actual = result.get(key)
+        matches = actual is True if key == 'strict_reload' else actual == expected
+        if not matches:
+            observed = repr(actual) if key in result else '<missing>'
+            mismatches.append(f'{key}: expected={expected!r}; actual={observed}')
+    if mismatches:
+        raise RuntimeError(
+            f'Not the reviewed 1B checkpoint/tokenizer contract: {directory / "result.json"}\n'
+            + '\n'.join(mismatches)
+            + '\nExpected reviewed run: ' + PINS['accepted_mini_run']
+            + '\nCompare this result.json with the reviewed saved 1B bundle. '
+              'Do not change pins or overwrite existing runs to bypass verification.')
     expected_files = dict(PINS['reviewed_metadata_sha256'], **{
         'mini-one-update.pt': PINS['checkpoint_sha256'],
         'tokenizer/bpe.model': PINS['tokenizer_sha256']})
     for relative, expected in expected_files.items():
-        if digest(directory / relative) != expected:
-            raise RuntimeError(f'1B hash mismatch: {relative}')
+        actual = digest(directory / relative)
+        if actual != expected:
+            raise RuntimeError(f'1B hash mismatch: {directory / relative}; '
+                               f'expected={expected}; actual={actual}')
     selected, mixtures = read(directory / 'selection.json'), read(directory / 'mixtures.json')
     if len(selected) != 8 or len(mixtures) != 4:
         raise RuntimeError('Incomplete mini selection/mixtures')

@@ -3,6 +3,7 @@
 Written for later explicit authorization; they are not a Kaggle success claim.
 """
 import importlib.util
+import json
 import sys
 import tarfile
 from pathlib import Path
@@ -98,6 +99,55 @@ def test_corrupt_existing_restore_is_preserved(monkeypatch, tmp_path):
     with pytest.raises(RuntimeError, match='hash mismatch'):
         support.restore(tmp_path / 'alternative')
     assert marker.read_text() == 'preserve'
+
+
+@pytest.mark.parametrize('field,actual', [
+    ('optimizer_steps', 2), ('strict_reload', False), ('strict_reload', 1),
+    ('checkpoint_sha256', 'different-checkpoint'),
+    ('tokenizer_sha256', 'different-tokenizer'), ('tokenizer_sha256', None),
+])
+def test_mini_contract_reports_expected_actual_and_path(monkeypatch, tmp_path, field, actual):
+    support = load('support')
+    contract = dict(optimizer_steps=1, strict_reload=True,
+                    checkpoint_sha256=support.PINS['checkpoint_sha256'],
+                    tokenizer_sha256=support.PINS['tokenizer_sha256'])
+    expected = contract[field]
+    contract[field] = actual
+    (tmp_path / 'result.json').write_text(json.dumps(contract))
+
+    def unexpected_digest(path):
+        pytest.fail('Invalid metadata must fail before reading checkpoint/audio files')
+
+    monkeypatch.setattr(support, 'digest', unexpected_digest)
+    with pytest.raises(RuntimeError) as error:
+        support.verify_mini(tmp_path)
+    message = str(error.value)
+    assert str(tmp_path / 'result.json') in message
+    assert f'{field}: expected={expected!r}; actual={actual!r}' in message
+    assert 'Do not change pins' in message
+    assert json.loads((tmp_path / 'result.json').read_text()) == contract
+
+
+def test_mini_contract_reports_all_missing_fields(tmp_path):
+    support = load('support')
+    (tmp_path / 'result.json').write_text('{}')
+    with pytest.raises(RuntimeError) as error:
+        support.verify_mini(tmp_path)
+    for field in ('optimizer_steps', 'strict_reload', 'checkpoint_sha256', 'tokenizer_sha256'):
+        assert f'{field}: expected=' in str(error.value)
+    assert str(error.value).count('actual=<missing>') == 4
+
+
+def test_matching_mini_contract_still_checks_file_hashes(monkeypatch, tmp_path):
+    support = load('support')
+    contract = dict(optimizer_steps=1, strict_reload=True,
+                    checkpoint_sha256=support.PINS['checkpoint_sha256'],
+                    tokenizer_sha256=support.PINS['tokenizer_sha256'])
+    (tmp_path / 'result.json').write_text(json.dumps(contract))
+    monkeypatch.setattr(support, 'digest', lambda path: 'changed-file')
+    with pytest.raises(RuntimeError, match='1B hash mismatch:') as error:
+        support.verify_mini(tmp_path)
+    assert 'expected=' in str(error.value) and 'actual=changed-file' in str(error.value)
 
 
 def test_archive_append_only_and_excludes_weights_audio_features(monkeypatch, tmp_path):
