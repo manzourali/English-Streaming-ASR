@@ -319,6 +319,39 @@ def test_retry_preserves_original_deadline(mini_modules, monkeypatch, tmp_path):
     assert budget.http_requests == 1
 
 
+@pytest.mark.parametrize('split', ['train', 'validation', 'test'])
+def test_viewer_asset_preserves_pinned_path(mini_modules, split):
+    fetch = mini_modules.fetch
+    path = (f"/assets/{contracts.PINS['dataset_repo']}/--/{contracts.PINS['dataset_revision']}"
+            f"/--/{contracts.PINS['config']}/{split}/100/audio/clip.mp3")
+    parsed = fetch.viewer_asset('https://datasets-server.huggingface.co' + path + '?Signature=secret', split, 100)
+    assert parsed.path == path
+    assert parsed.query == 'Signature=secret'
+
+
+@pytest.mark.parametrize('field', ['scheme', 'hostname', 'revision', 'config', 'split', 'row'])
+def test_viewer_asset_mismatch_diagnostics(mini_modules, field):
+    fetch = mini_modules.fetch
+    scheme = 'http' if field == 'scheme' else 'https'
+    hostname = 'other.example' if field == 'hostname' else 'datasets-server.huggingface.co'
+    revision = 'different-revision' if field == 'revision' else contracts.PINS['dataset_revision']
+    config = 'other' if field == 'config' else contracts.PINS['config']
+    split = 'test' if field == 'split' else 'train'
+    row = 101 if field == 'row' else 100
+    path = f"/assets/{contracts.PINS['dataset_repo']}/--/{revision}/--/{config}/{split}/{row}/audio/clip.mp3"
+    url = f'{scheme}://{hostname}{path}?Signature=secret#private-fragment'
+    with pytest.raises(RuntimeError, match='Viewer asset revision/path mismatch: ') as caught:
+        fetch.viewer_asset(url, 'train', 100)
+    message = str(caught.value)
+    details = json.loads(message.split(': ', 1)[1])
+    assert details['mismatches'] == [field if field in ('scheme', 'hostname') else 'path']
+    assert details['actual_path'] == path
+    assert details['actual_hostname'] == hostname
+    assert details['original_split'] == 'train' and details['row_index'] == 100
+    assert contracts.PINS['dataset_revision'] in details['expected_path_prefix']
+    assert 'Signature' not in message and 'secret' not in message and 'private-fragment' not in message
+
+
 def test_repository_change_stops_before_audio(mini_modules):
     budget = types.SimpleNamespace(get=lambda url, limit: json.dumps(dict(sha='other', gated=False)).encode())
     with pytest.raises(RuntimeError, match='Repository changed'):

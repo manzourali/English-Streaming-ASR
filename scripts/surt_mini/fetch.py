@@ -129,6 +129,26 @@ def repository(budget):
     return meta
 
 
+def viewer_asset(url, original_split, row_index):
+    parsed = urllib.parse.urlparse(url)
+    expected = f"/assets/{PINS['dataset_repo']}/--/{PINS['dataset_revision']}/--/{PINS['config']}/{original_split}/{row_index}/audio/"
+    mismatches = []
+    if parsed.scheme != 'https':
+        mismatches.append('scheme')
+    if parsed.hostname != 'datasets-server.huggingface.co':
+        mismatches.append('hostname')
+    if not parsed.path.startswith(expected):
+        mismatches.append('path')
+    if mismatches:
+        # Viewer URLs may contain signed query parameters; report only routing fields.
+        details = dict(mismatches=mismatches, actual_scheme=parsed.scheme,
+                       actual_hostname=parsed.hostname, actual_path=parsed.path,
+                       expected_scheme='https', expected_hostname='datasets-server.huggingface.co',
+                       expected_path_prefix=expected, original_split=original_split, row_index=row_index)
+        raise RuntimeError('Viewer asset revision/path mismatch: ' + json.dumps(details))
+    return parsed
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('run', type=Path)
@@ -199,10 +219,7 @@ def main():
             if not isinstance(audio, list) or len(audio) != 1:
                 continue
             url = audio[0]['src']
-            parsed = urllib.parse.urlparse(url)
-            expected = f"/assets/{PINS['dataset_repo']}/--/{PINS['dataset_revision']}/--/{PINS['config']}/{original_split}/{row_index}/audio/"
-            if parsed.scheme != 'https' or parsed.hostname != 'datasets-server.huggingface.co' or not parsed.path.startswith(expected):
-                raise RuntimeError('Viewer asset revision/path mismatch')
+            parsed = viewer_asset(url, original_split, row_index)
             budget.attempts += 1
             attempt = dict(source_id=row['path'], speaker_hash=speaker, original_split=original_split,
                            row_index=row_index, status='attempted; not selected')
