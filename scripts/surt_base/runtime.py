@@ -9,6 +9,7 @@ import time
 from pathlib import Path
 
 from common import dump, score, sha256
+from dependencies import audit, require
 
 ROOT = Path(__file__).resolve().parents[2]
 PINS = json.loads((ROOT / 'configs/surt_base/pins.json').read_text())
@@ -31,8 +32,9 @@ def preflight():
                 'kaldifeat': '1.25.4.dev20240606+cuda12.1.torch2.3.1',
                 'lhotse': '1.33.0', 'sentencepiece': '0.2.3', 'meeteval': '0.4.3',
                 'numpy': '1.26.4', 'scipy': '1.13.1'}
-    actual = {name: importlib.metadata.version(name) for name in expected}
-    assert actual == expected, (actual, expected)
+    dependency_report = audit(expected)
+    require(dependency_report)
+    actual = {name: row['actual'] for name, row in dependency_report['packages'].items()}
     assert torch.cuda.is_available() and torch.cuda.device_count() == 1
     assert torch.version.cuda == '12.1'
     # Unlike the tone fixture, pretrained.py actually uses torch.from_numpy.

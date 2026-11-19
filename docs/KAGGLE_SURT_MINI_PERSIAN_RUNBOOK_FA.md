@@ -176,12 +176,47 @@ trap 'status=$?; if [ "$status" -eq 0 ]; then echo "OK: 02-runtime"; else echo "
 set -euxo pipefail
 source /kaggle/working/English-Streaming-ASR/scripts/surt_mini/env.sh
 python -m pip freeze > "$MINI_RUN/logs/freeze-$(date -u +%Y%m%dT%H%M%S)-$$.txt"
+python "$PROJECT/scripts/surt_base/dependencies.py" --report "$MINI_RUN/logs/dependencies-$(date -u +%Y%m%dT%H%M%S)-$$.txt"
 python -m pip check
 python "$PROJECT/scripts/surt_base/runtime.py"
 python "$PROJECT/scripts/surt_mini/runtime.py" "$MINI_RUN"
 nvidia-smi
 ) > "$CELL_LOG" 2>&1
 ```
+
+### رفع drift نسخهٔ grpcio پیش از ادامه
+
+اگر سلول ۲، grpcio نصب‌شدهٔ 1.85.3 را در برابر pin برابر 1.85.1 گزارش کرد، اعتبارسنجی را
+خاموش نکنید. [بررسی علت و محدودیت شواهد](experiments/grpcio_drift_2026-11-19.md).
+pin دقیق تمام بسته‌ها حفظ است؛ grpcio وابستگی کمکی TensorBoard است، اما اجرای آزمایش باید
+با freeze ثبت‌شده منطبق باشد. تغییر Torch/CUDA/k2/kaldifeat لازم نیست.
+
+پس از push اصلاحات و اجرای سلول ۱ با SHA جدید، این فرمان‌ها را داخل یک سلول `%%bash`
+با همان الگوی log/trap سلول ۲ اجرا کنید (stdout/stderr کامل در فایل بماند):
+
+```bash
+source /kaggle/working/English-Streaming-ASR/scripts/surt_mini/env.sh
+python "$PROJECT/scripts/surt_base/dependencies.py" --repair-grpcio \
+  --report "$MINI_RUN/logs/grpcio-repair-$(date -u +%Y%m%dT%H%M%S)-$$.txt"
+python -m pip check
+python -c 'import grpc; print(grpc.__version__, grpc.__file__)'
+python "$PROJECT/scripts/surt_base/runtime.py"
+python "$PROJECT/scripts/surt_mini/runtime.py" "$MINI_RUN"
+```
+
+ابزار فقط در venv ایزولهٔ Python 3.12.10 کار می‌کند: اول pip check و بررسی reverse dependencies،
+سپس `pip install --dry-run --report ... --only-binary=:all: --constraint requirements-kaggle.txt grpcio==1.85.1`.
+اگر plan بستهٔ دیگری را تغییر دهد، متوقف می‌شود. پس از تأیید resolver، فقط grpcio با
+`--no-deps --only-binary=:all:` نصب می‌شود؛ before/after و گزارش pip، import grpc و pip check
+دوباره بررسی می‌شوند. نبود wheel یا تضاد وابستگی باید بررسی شود؛ pin را خودکار تغییر ندهید.
+این فرمان‌ها اجرای محیط واقعی‌اند و باید فقط در Kaggle اجرا شوند؛ تست محلی جای آن‌ها نیست.
+
+ترتیب نصب: محیط تازه طبق سلول ۲ راهنمای 1A با **requirements-kaggle.txt کامل**، سپس تعمیر
+محدود NumPy/SciPy در صورت نیاز طبق همان راهنما؛ برای محیط موجود با drift grpcio همین تعمیر
+هدفمند، سپس validation بالا. بعداً TensorBoard یا ابزار دیگری را بدون constraint نصب نکنید؛
+هر نصب اضافی لازم را با full freeze به‌عنوان constraint و بازبینی dry-run انجام دهید.
+`pip check` به‌تنهایی pinهای آزمایش را تضمین نمی‌کند. خطای نسخه و گزارش source را حفظ کنید؛
+installer/location قابل تشخیص‌اند، اما index یا فرمان نصب قبلی معمولاً در metadata موجود نیست.
 
 ## سلول ۳ — دریافت محدود هشت کلیپ واقعی
 

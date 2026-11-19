@@ -223,6 +223,11 @@ python "$PROJECT/scripts/surt_base/runtime.py" 2>&1 | tee "$BASE/logs/preflight.
 
 ### سلول 3 — 03-assets
 
+در drift برابر `grpcio 1.85.3` در محیط به‌ارث‌رسیده، نصب کامل را تکرار نکنید؛
+روش تعمیر هدفمند و resolver-checked در [راهنمای mini](KAGGLE_SURT_MINI_PERSIAN_RUNBOOK_FA.md)
+و [گزارش علت](experiments/grpcio_drift_2026-11-19.md) آمده است. نصب تازه از freeze کامل
+grpcio را دقیقاً pin می‌کند؛ شاخهٔ محیط موجود فقط NumPy/SciPy را تعمیر می‌کند.
+
 ```bash
 %%bash
 set -euo pipefail

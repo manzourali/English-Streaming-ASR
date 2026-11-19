@@ -140,7 +140,7 @@ python -m pip install 'k2==1.24.4.dev20241030+cuda12.1.torch2.3.1' \
 python -m pip install 'kaldifeat==1.25.4.dev20240606+cuda12.1.torch2.3.1' \
   -f https://csukuangfj.github.io/kaldifeat/cuda.html
 python -m pip install 'lhotse==1.33.0' 'sentencepiece==0.2.3' \
-  'meeteval==0.4.3' 'pypinyin==0.50.0' einops tensorboard \
+  'meeteval==0.4.3' 'pypinyin==0.50.0' einops 'tensorboard==2.21.0' 'grpcio==1.85.1' \
   kaldialign typeguard soundfile urllib3
 NVIDIA_LIB_DIRS="$(python -c 'import pathlib, sysconfig; p = pathlib.Path(sysconfig.get_path("purelib")); d = sorted((p / "nvidia").glob("*/lib")); nvrtc = p / "nvidia/cuda_nvrtc/lib/libnvrtc.so.12"; assert nvrtc.is_file(), f"Missing {nvrtc}"; print(":".join(map(str, d)))')"
 export LD_LIBRARY_PATH="$NVIDIA_LIB_DIRS${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"

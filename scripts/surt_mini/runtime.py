@@ -8,6 +8,7 @@ import sys
 from pathlib import Path
 
 from contracts import PINS, ROOT, dump, file_hash
+from dependencies import audit, require
 
 
 def main():
@@ -44,13 +45,9 @@ def main():
             or contract['missing'] or contract['unexpected'] or contract['shape_mismatches']
             or contract['checkpoint_sha256'] != pins['assets']['exp/surt_base/pretrained.pt']):
         raise RuntimeError('Baseline technical gate not satisfied')
-    observed = {}
-    for line in (ROOT / 'configs/surt_base/requirements-kaggle.txt').read_text().splitlines():
-        name, expected = line.split('==')
-        value = importlib.metadata.version(name)
-        observed[name] = value
-        if value != expected:
-            raise RuntimeError(f'Environment drift: {name} expected {expected}, found {value}; no automatic upgrade')
+    dependency_report = audit()
+    require(dependency_report)
+    observed = {name: row['actual'] for name, row in dependency_report['packages'].items()}
     import numpy as np
     import soundfile as sf
     import torch
@@ -73,7 +70,7 @@ def main():
     import lhotse.features.kaldifeat
 
     args.run.mkdir(parents=True, exist_ok=True)
-    dump(args.run / 'runtime.json', dict(packages=observed, source_hashes=actual,
+    dump(args.run / 'runtime.json', dict(packages=observed, dependencies=dependency_report, source_hashes=actual,
          icefall_revision=pins['icefall_revision'], model_revision=pins['model_revision'],
          python=sys.version, executable=sys.executable, gpu=torch.cuda.get_device_name(0),
          soundfile_formats=sf.available_formats(), extra_installs=[],
