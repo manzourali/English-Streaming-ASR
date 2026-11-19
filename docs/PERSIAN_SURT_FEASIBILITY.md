@@ -1,8 +1,8 @@
 # Persian SURT feasibility — current evidence and open gates
 
-Updated 2026-11-13. The current research target is Persian language adaptation
+Updated 2026-11-19. The current research target is Persian language adaptation
 of SURT 2.0 for overlapping voices. The [roadmap](PERSIAN_SURT_ROADMAP_FA.md)
-and [mini Persian runbook](KAGGLE_SURT_MINI_PERSIAN_RUNBOOK_FA.md) define current work.
+and [stage 1C runbook](KAGGLE_SURT_STREAMING_RUNBOOK_FA.md) define current work.
 
 ## What passed
 
@@ -19,12 +19,18 @@ The user confirmed auditory/reference/two-branch review on 2026-11-13.
 Bounded clean PI-WER counts: 0/8, 1/12; mixture: 4/20. See the
 [1A review and 1B preparation record](experiments/surt_mini_1b_preparation_2026-11-13.md).
 
+Stage 1B's technical gate is accepted for `mini-20261119-d`: genuine recipe
+loss/backward/update, semantic vocabulary transfer, changed weights and strict
+reload have saved evidence. The user confirmed eight clean references and four
+complete mixtures on 2026-11-19. See the [review](experiments/surt_mini_1b_review_2026-11-19.md).
+Mini validation/test PI-WER is 100%; held-out tokenizer coverage is incomplete.
+This is structural feasibility, not learned Persian accuracy.
+
 ## What has not passed
 
 | Gate | Remaining evidence |
 | --- | --- |
-| Mini Persian transfer | Real Persian audio/text, normalization/train-only vocabulary, semantic token mapping and compatible parameter transfer/reset |
-| Persian update | Actual recipe feature/source targets and HEAT; finite forward/backward/update; checkpoint and gradient checks |
+| Useful Persian recognition | Controlled adaptation beyond the accepted one-step mini; coverage and independent quality evidence |
 | Incremental streaming | Persistent bounded state, chunk/EOF behavior, context-compatible reference, real latency measurements |
 | Resource feasibility | Peak device/process memory distinction, per-step time, data lengths and budget estimates on the actual GPU |
 | Thesis quality | Controlled data simulation/adaptation and held-out ORC-WER, not tone WER |
@@ -81,9 +87,12 @@ comparing simulators. See the [roadmap sources](PERSIAN_SURT_ROADMAP_FA.md).
 
 ## Next action
 
-Run only the bounded [mini Persian 1B procedure](KAGGLE_SURT_MINI_PERSIAN_RUNBOOK_FA.md)
-in Kaggle, after pushing the prepared code yourself. Its first cell updates the
-checkout to the explicit pushed SHA. Local tests do not pass gate 1B.
+Run the bounded [stage 1C component/resource procedure](KAGGLE_SURT_STREAMING_RUNBOOK_FA.md)
+in Kaggle, after pushing the prepared code yourself. Restore the complete saved
+1B directory in a fresh session; phase 0 and 1A do not need to be rerun. Its first
+cell updates the checkout to the explicit pushed SHA. The first 1C pass gathers
+source/API and component/resource evidence; native end-to-end streaming remains
+open until exact state adapters and full reset/EOF/context tests pass.
 Then use [the gated follow-up prompts](prompts/PERSIAN_SURT_FOLLOWUPS.md) for
 stateful execution/resources, corpus preparation, adaptation and evaluation.
 Keep all unexecuted measurements explicitly unmeasured until actual logs

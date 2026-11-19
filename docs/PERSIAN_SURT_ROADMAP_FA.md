@@ -4,6 +4,16 @@
 
 ## وضعیت کنونی
 
+به‌روزرسانی ۲۰۲۶-۱۱-۱۹: **گام‌های 1A و 1B از نظر فنی پذیرفته شده‌اند؛ gate استریم 1C باز است.**
+run واقعی `mini-20261119-d` یک update، gradient/delta، reload strict و decode دوشاخه‌ای
+را ثبت کرده و کاربر تطبیق هشت clean و چهار مخلوط کامل را تأیید کرده است.
+[گزارش پذیرش و محدودیت‌های 1B](experiments/surt_mini_1b_review_2026-11-19.md).
+PI-WER mini برابر ۱۰۰٪ و tokenizer دارای unknown در validation است؛ کیفیت فارسی هنوز
+اثبات نشده است. مسیر جاری [runbook 1C](KAGGLE_SURT_STREAMING_RUNBOOK_FA.md) است:
+بخش A ممیزی API/feature/state اجزا و منابع؛ بخش B اتصال native و شواهد استریم کامل.
+موفقیت بخش A به‌تنهایی gate 1C را نمی‌بندد. فایل [master_prompt.md](../master_prompt.md)
+قواعد دائمی اجرای فقط روی Kaggle و بازیابی session را ثبت می‌کند.
+
 **گام 1A پذیرفته شده؛ امکان‌سنجی کامل فارسی هنوز تکمیل نشده است.** پس از آزمون زیرساخت مصنوعی، بستهٔ واقعی `outputs/surt-base-1a-review` بررسی شد: هش ۴۴ فایل، بارگذاری strict وزن رسمی و decode دو کلیپ انگلیسی و مخلوط معتبرند؛ کاربر شنیدن و تطبیق مرجع/دو شاخه را در ۲۰۲۶-۱۱-۱۳ تأیید کرد. PI-WER دو clean برابر ۰/۸ و ۱/۱۲ و مخلوط ۴/۲۰ است. این whole-batch decode است. [شواهد و آماده‌سازی 1B](experiments/surt_mini_1b_preparation_2026-11-13.md).
 
 ## ارزیابی پرامپت پیشنهادی
@@ -43,13 +53,16 @@ Common Voice فارسی می‌تواند منبع اولیه باشد، اما 
 
 آماده‌سازی محلی گام ۱A در [runbook مستقل baseline واقعی انگلیسی](KAGGLE_SURT_BASE_ENGLISH_RUNBOOK_FA.md)
 قرار دارد: وزن رسمی Base و BPE پین‌شده، دو کلیپ واقعی و یک مخلوط، whole-batch decode و PI-WER محدود.
-اجرای واقعی 1A و تأیید شنیداری اکنون بررسی شده‌اند. مسیر جاری [runbook مستقل 1B](KAGGLE_SURT_MINI_PERSIAN_RUNBOOK_FA.md) است؛ کد آن محلی آماده شده و gate آن تا بازبینی اجرای واقعی Kaggle **pending** است.
+اجرای واقعی 1A و 1B و تأییدهای شنیداری بررسی شده‌اند. [runbook 1B](KAGGLE_SURT_MINI_PERSIAN_RUNBOOK_FA.md)
+برای سابقه و بازتولید حفظ می‌شود؛ مسیر جاری [runbook 1C](KAGGLE_SURT_STREAMING_RUNBOOK_FA.md) است.
+برای 1C از پوشهٔ کامل run موفق بازیابی کنید؛ اجرای مجدد فاز صفر یا 1A لازم نیست.
 
 چهار نوت‌بوک باقی‌مانده ابزار داده/قرارداد native export هستند و هنوز recipe کامل adaptation فارسی نیستند. `train_asr.py --validate-only` آموزش انجام نمی‌دهد. adapter دادهٔ فعلی هم به‌تنهایی source-featureهای هم‌تراز مورد نیاز recipe را نمی‌سازد. هستهٔ audio، mixture، manifest، معیار و state حفظ شده است؛ مدل قبلی و router حذف شده‌اند. VAD/OSD موجود ابزار تشخیصی عمومی‌اند و ورودی اجباری مسیر SURT نیستند.
 
 ## پرامپت‌ها و آرشیو
 
-- [پرامپت گام بعدی: ۱A](prompts/PERSIAN_SURT_NEXT_STEP.md)
+- [runbook جاری: 1C و بازیابی session](KAGGLE_SURT_STREAMING_RUNBOOK_FA.md)
+- [پرامپت تاریخی baseline ۱A](prompts/PERSIAN_SURT_NEXT_STEP.md)
 - [پرامپت‌های ادامه پس از عبور از gate](prompts/PERSIAN_SURT_FOLLOWUPS.md)
 - [آرشیو یک‌فایلی لاگ‌ها و قواعد Git](KAGGLE_SURT_ARTIFACTS_FA.md)
 

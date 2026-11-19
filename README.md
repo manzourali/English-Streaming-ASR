@@ -6,11 +6,14 @@ persistent speaker identities. The existing repository/package names are kept
 for installation compatibility.
 
 Start with the [current Persian roadmap](docs/PERSIAN_SURT_ROADMAP_FA.md).
-The Kaggle synthetic infrastructure smoke passed on user-provided evidence:
-one update, checkpoint reload and all 12 decode groups. **Persian and genuine
-incremental-streaming feasibility are not yet established.**
+The synthetic infrastructure smoke and real English stage 1A passed. The real
+Persian mini run `mini-20261119-d` passed the stage 1B technical gate, including
+one update, strict reload and the user's auditory confirmation. Its mini
+validation/test PI-WER is 100%; useful Persian recognition is not established.
+**Native incremental streaming remains an open stage 1C gate.**
 
-- [Run the next step: official SURT Base on real English speech](docs/prompts/PERSIAN_SURT_NEXT_STEP.md)
+- [Current runbook: stage 1C components/resources and session restoration](docs/KAGGLE_SURT_STREAMING_RUNBOOK_FA.md)
+- [Reviewed stage 1B evidence and limitations](docs/experiments/surt_mini_1b_review_2026-11-19.md)
 - [Later gated prompts: mini Persian → data → adaptation → evaluation](docs/prompts/PERSIAN_SURT_FOLLOWUPS.md)
 - [Download all logs as one archive; what belongs in Git](docs/KAGGLE_SURT_ARTIFACTS_FA.md)
 - [Recorded smoke evidence and remaining measurements](docs/experiments/surt_smoke_2026-11-12.md)
@@ -20,11 +23,12 @@ incremental-streaming feasibility are not yet established.**
 
 Audio handling, controlled two-source mixtures, split validation, Persian text
 utilities, scheduler/state contracts and short-mixture PI-WER are available.
-The actual pinned Icefall recipe is the next model-execution path. A compatible
+The actual pinned Icefall recipe is the current model-execution path. A compatible
 trained native export and the external training backend for this repository's
 wrappers are not supplied. Those missing wrappers do not block testing the
-upstream pretrained recipe. ORC-WER/continuous streaming and Persian vocabulary
-transfer need their own implementation and validation.
+upstream pretrained recipe. Mini Persian vocabulary transfer has actual Kaggle
+evidence; ORC-WER, continuous streaming and useful adaptation quality still need
+their own implementation and validation.
 
 The old single-stream comparison model, baseline notebook and heuristic-router
 artifacts have been removed. Generic VAD/OSD diagnostics are retained outside
@@ -49,7 +53,9 @@ cu128 notebook image. See [environment compatibility](docs/KAGGLE_ENVIRONMENT.md
 
 ## Local checks
 
-Heavy model/data processing belongs on Kaggle. Local checks use small fixtures:
+Heavy model/data processing belongs on Kaggle. The following are reference
+commands for small fixture checks, not instructions to run them automatically;
+the current standing instruction requires explicit authorization before tests:
 
 ```bash
 python3 -m pip install -e '.[dev,audio]'

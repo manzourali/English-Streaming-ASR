@@ -1,0 +1,28 @@
+{
+  "accepted_mini_run": "mini-20261119-d",
+  "accepted_on": "2026-11-19",
+  "checkpoint_sha256": "b9682169c965c7980868b3c950ebb8b84fc8d7718cbcb346a72ca09aae974530",
+  "tokenizer_sha256": "af7642a00393f2772fc83c9f403b542e545b542dfc9ff7fca54548ee6001d085",
+  "reviewed_metadata_sha256": {
+    "model-arguments.json": "16575350a3552a306355a36efc719ee6a5d2e0bc19e0f2dc77fe15f7cf61c631",
+    "feature-contract.json": "3a6e6af65878e2ccfde1fa5c3cba4aecc208706a95f484e74f322869bb2ca465",
+    "selection.json": "cd23283118d071558b271d8cb1d17931bcc4ba7741b1b7c4f77dd35b9e421ac6",
+    "mixtures.json": "62e6d495cefacd560e0bd8e0bb3b63d33ae83252af90c456167c2dac5cbc3524",
+    "result.json": "5956a3a2570081d219d66926e73096d63c06dd78a125532e953941bf88d49b30"
+  },
+  "auditory_confirmation": "User confirmed all eight clean references and all four complete two-source mixtures on 2026-11-19",
+  "seed": 20261119,
+  "sample_rate": 16000,
+  "packet_samples": 1600,
+  "max_packet_samples": 3200,
+  "feature_atol": 0.0002,
+  "feature_rtol": 0.0001,
+  "stress_seconds": 120,
+  "warmup_passes": 2,
+  "measured_passes": 5,
+  "profiling_optimizer_steps": 7,
+  "wall_seconds": 900,
+  "max_evidence_bytes": 20971520,
+  "main_corpus_download": false,
+  "native_streaming_gate": "open; component probes cannot close the end-to-end gate"
+}

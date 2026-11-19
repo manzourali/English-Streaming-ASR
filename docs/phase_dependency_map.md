@@ -1,5 +1,11 @@
 # Active dependencies — Persian SURT adaptation
 
+Updated 2026-11-19: real English 1A and the technical mini Persian 1B gate are
+accepted. Native streaming remains open. Start with [1C-A](KAGGLE_SURT_STREAMING_RUNBOOK_FA.md)
+for exact API/source and component/resource evidence, then complete native state
+integration and end-to-end parity in 1C-B. Restore saved 1B inputs after a session
+reset; rerunning the completed phases is unnecessary.
+
 ```mermaid
 flowchart TD
     A[Completed synthetic GPU smoke] --> B[Official SURT Base: real English baseline]
