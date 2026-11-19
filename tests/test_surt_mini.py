@@ -180,6 +180,66 @@ def test_download_budget_and_cache_are_bounded(mini_modules, monkeypatch, tmp_pa
         budget.get('https://example/deadline', 10)
 
 
+@pytest.mark.parametrize('status', [502, 503, 504])
+def test_metadata_transient_http_retries_are_bounded(mini_modules, monkeypatch, tmp_path, status):
+    fetch = mini_modules.fetch
+    budget = fetch.Budget(tmp_path / 'cache')
+    responses = [status, status, b'valid metadata']
+    waits, bodies = [], []
+
+    def open_url(url, timeout):
+        response = responses.pop(0)
+        if isinstance(response, int):
+            body = io.BytesIO(b'error body is not downloaded')
+            bodies.append(body)
+            raise fetch.urllib.error.HTTPError(url, response, 'upstream failure', {}, body)
+        return io.BytesIO(response)
+
+    monkeypatch.setattr(fetch.urllib.request, 'urlopen', open_url)
+    monkeypatch.setattr(fetch.time, 'sleep', waits.append)
+    assert budget.get('https://example/rows', 100) == b'valid metadata'
+    assert waits == [1, 2] and budget.http_requests == 3
+    assert budget.bytes == len(b'valid metadata') and all(body.closed for body in bodies)
+    assert len(budget.report()['http_failures']) == 2
+
+
+@pytest.mark.parametrize('status, cache_key, expected', [(502, None, 3), (403, None, 1),
+                                                       (404, None, 1), (502, 'audio', 1)])
+def test_http_failure_stops_without_fallback(mini_modules, monkeypatch, tmp_path, status, cache_key, expected):
+    fetch = mini_modules.fetch
+    budget = fetch.Budget(tmp_path / 'cache')
+    urls = []
+
+    def open_url(url, timeout):
+        urls.append(url)
+        raise fetch.urllib.error.HTTPError(url, status, 'failure', {}, io.BytesIO(b'error'))
+
+    monkeypatch.setattr(fetch.urllib.request, 'urlopen', open_url)
+    monkeypatch.setattr(fetch.time, 'sleep', lambda seconds: None)
+    with pytest.raises(RuntimeError, match=f'HTTP {status}.*new RUN_ID'):
+        budget.get('https://example/resource', 100, cache_key)
+    assert urls == ['https://example/resource'] * expected
+    assert budget.http_requests == expected and budget.bytes == 0
+    assert not list((tmp_path / 'cache').iterdir())
+
+
+def test_retry_preserves_original_deadline(mini_modules, monkeypatch, tmp_path):
+    fetch = mini_modules.fetch
+    budget = fetch.Budget(tmp_path / 'cache')
+
+    def fail(url, timeout):
+        raise fetch.urllib.error.HTTPError(url, 502, 'failure', {}, io.BytesIO())
+
+    def advance(seconds):
+        budget.begin -= contracts.PINS['limits']['seconds']
+
+    monkeypatch.setattr(fetch.urllib.request, 'urlopen', fail)
+    monkeypatch.setattr(fetch.time, 'sleep', advance)
+    with pytest.raises(RuntimeError, match='wall-time budget'):
+        budget.get('https://example/rows', 100)
+    assert budget.http_requests == 1
+
+
 def test_repository_change_stops_before_audio(mini_modules):
     budget = types.SimpleNamespace(get=lambda url, limit: json.dumps(dict(sha='other', gated=False)).encode())
     with pytest.raises(RuntimeError, match='Repository changed'):

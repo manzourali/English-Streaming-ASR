@@ -5,6 +5,7 @@ import math
 import platform
 import signal
 import time
+import urllib.error
 import urllib.parse
 import urllib.request
 from pathlib import Path
@@ -20,6 +21,8 @@ class Budget:
         self.bytes = 0
         self.rows = 0
         self.attempts = 0
+        self.http_requests = 0
+        self.http_failures = []
 
     def check(self):
         limits = PINS['limits']
@@ -29,6 +32,30 @@ class Budget:
             raise RuntimeError('Persistent cache budget exhausted; preserve it for review')
 
     def get(self, url, limit, cache_key=None):
+        attempts = 3 if cache_key is None else 1
+        for attempt in range(attempts):
+            self.check()
+            try:
+                return self.get_once(url, limit, cache_key)
+            except urllib.error.HTTPError as error:
+                status = error.code
+                error.close()
+                retry = status in (502, 503, 504) and attempt + 1 < attempts
+                self.http_failures.append(dict(status=status, attempt=attempt + 1, retry=retry,
+                                               resource='metadata' if cache_key is None else 'audio'))
+                if not retry:
+                    raise RuntimeError(
+                        f'HTTP {status} while fetching {"metadata" if cache_key is None else "audio"}; '
+                        f'stopped after {attempt + 1} request(s). Preserve this run, archive it '
+                        'with cell 6, then use a new RUN_ID for another attempt; no source fallback.'
+                    ) from error
+                delay = attempt + 1
+                print(f'Metadata HTTP {status}; retry {attempt + 1}/2 in {delay}s within original budget', flush=True)
+                self.check()
+                time.sleep(delay)
+                self.check()
+
+    def get_once(self, url, limit, cache_key=None):
         self.check()
         cached = self.cache / cache_key if cache_key else None
         if cached and cached.exists():
@@ -37,6 +64,9 @@ class Budget:
             return cached.read_bytes()
         chunks = []
         size = 0
+        if self.bytes >= PINS['limits']['network_bytes']:
+            raise RuntimeError('Transport byte budget exhausted')
+        self.http_requests += 1
         with urllib.request.urlopen(url, timeout=min(20, max(1, PINS['limits']['seconds'] - (time.monotonic() - self.begin)))) as response:
             while True:
                 self.check()
@@ -62,6 +92,7 @@ class Budget:
 
     def report(self):
         return dict(rows_inspected=self.rows, audio_attempts=self.attempts,
+                    http_requests=self.http_requests, http_failures=self.http_failures,
                     downloaded_bytes=self.bytes, elapsed_seconds=time.monotonic() - self.begin,
                     cache_bytes=sum(path.stat().st_size for path in self.cache.rglob('*') if path.is_file()),
                     limits=PINS['limits'])
@@ -95,6 +126,9 @@ def main():
 
     args.run.mkdir(parents=True, exist_ok=True)
     output = args.run / 'data'
+    if output.exists():
+        raise RuntimeError('Fetch already attempted in this run. Preserve data and evidence; run cell 6, '
+                           'then cells 1 and 2 with a new RUN_ID before retrying cell 3. Keep the shared download-cache.')
     output.mkdir(exist_ok=False)
     budget = Budget(args.cache)
     def deadline(signum, frame):

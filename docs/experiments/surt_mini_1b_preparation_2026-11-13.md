@@ -3,6 +3,17 @@
 Date: 2026-11-13. Gate 1A: **accepted for bounded English baseline**.
 Gate 1B: **prepared locally; NOT passed; real Kaggle execution/review pending**.
 
+Kaggle follow-up, 2026-11-14: cell 3 failed with HTTP 502 from the HF viewer
+`/rows` metadata endpoint, after repository/README checks but before the audio
+selection loop. The log does not identify which metadata page failed or establish
+whether the upstream failure is transient. Metadata now retries only 502/503/504,
+at most three requests with 1/2-second backoff inside the original byte/deadline
+budgets. Audio requests do not retry. HTTP request/failure counters are included
+in fetch-budget.json; error bodies and signed asset URLs are not logged by retry
+diagnostics. Preserve/archive the failed run, then use a new RUN_ID and rerun
+cells 1–3 with the updated pushed SHA; do not delete data or previous evidence.
+The prior cell-1 changes removed by the user are not reinstated.
+
 The user explicitly confirmed listening to both English clips and their mixture,
 checking the references and the two decoded branches, in this session on 2026-11-13.
 All 44 entries in `outputs/surt-base-1a-review/review-sha256.json` match their files.
