@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:persian-surt-pilot:manifest:1",
+  "title": "Private canonical clean-clip manifest; one object per JSONL line",
+  "type": "object",
+  "required": ["schema_version", "source_id", "speaker_hash", "split", "provenance", "text_raw", "text_normalized", "text_policy", "original_sha256", "waveform_sha256", "file_sha256", "audio", "duration_metadata_seconds", "duration_measured_seconds", "duration_canonical_seconds", "original_rate", "original_channels", "sample_rate", "channels", "conversion", "auditory_acceptance"],
+  "properties": {
+    "schema_version": {"const": "persian-surt-pilot/1"},
+    "source_id": {"type": "string", "pattern": "^[^/]+\\.mp3$"},
+    "speaker_hash": {"$ref": "#/$defs/sha256"},
+    "split": {"enum": ["train", "validation", "test"]},
+    "text_raw": {"type": "string", "minLength": 1},
+    "text_normalized": {"type": "string", "minLength": 1},
+    "text_policy": {"const": "fa-latin-v1"},
+    "provenance": {
+      "type": "object",
+      "required": ["dataset_id", "release", "locale", "url", "license"],
+      "properties": {
+        "dataset_id": {"const": "cmu5xazgy00finq074vaqo1b3"},
+        "release": {"const": "cv-corpus-27.0-2026-09-11"},
+        "locale": {"const": "fa"},
+        "url": {"type": "string"},
+        "license": {"const": "CC0-1.0"}
+      }
+    },
+    "original_sha256": {"$ref": "#/$defs/sha256"},
+    "waveform_sha256": {"$ref": "#/$defs/sha256"},
+    "file_sha256": {"$ref": "#/$defs/sha256"},
+    "audio": {"type": "string", "pattern": "^/kaggle/working/"},
+    "duration_metadata_seconds": {"type": ["number", "null"], "minimum": 0},
+    "duration_measured_seconds": {"type": "number", "minimum": 1, "maximum": 12},
+    "duration_canonical_seconds": {"type": "number", "exclusiveMinimum": 0},
+    "original_rate": {"type": "integer", "minimum": 1},
+    "original_channels": {"type": "integer", "minimum": 1},
+    "sample_rate": {"const": 16000},
+    "channels": {"const": 1},
+    "conversion": {"type": "string"},
+    "auditory_acceptance": {"type": "null"}
+  },
+  "$defs": {"sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}}
+}

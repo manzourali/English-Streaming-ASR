@@ -19,8 +19,12 @@ PI-WER mini برابر ۱۰۰٪ و پوشش tokenizer روی held-out ناقص �
 «ویی» شواهد یادگیری فارسی نیست و به‌تنهایی شکست adaptation نهایی را هم ثابت نمی‌کند.
 
 گام بعدی رسمی، **مرحلهٔ ۲: داده و سیاست نوشتار برای یک پایلوت محدود** است.
-[پرامپت مرحلهٔ ۲](prompts/PERSIAN_SURT_FOLLOWUPS.md) آماده است؛ خود مرحله هنوز شروع
-نشده و منتظر دستور کاربر است. [runbook 1C-B](KAGGLE_SURT_STREAMING_1CB_RUNBOOK_FA.md)
+مرحلهٔ ۲ در ۲۰۲۶-۱۱-۲۰ با دستور کاربر برای آماده‌سازی محدود آغاز شد؛ ابزار محلی،
+config و [runbook مستقل](KAGGLE_SURT_PILOT_2_RUNBOOK_FA.md) آماده‌اند. **gate باز است**:
+شواهد کاربر HTTP 200، Range با 206 و prefix شامل ۵۰۰۰ ردیف/۴ گوینده را نشان می‌دهند؛
+انتقال گزارش‌شدهٔ metadata از سقف ۸MiB بیشتر و ledger آن ناقص است. probe مخزن آماده است؛
+subset رسمی زیر سقف، دادهٔ CV27، اثبات استقلال و تست‌های Kaggle هنوز فراهم نیستند.
+[قرارداد داده و موانع](SURT_PILOT_DATA_CONTRACT_FA.md). [runbook 1C-B](KAGGLE_SURT_STREAMING_1CB_RUNBOOK_FA.md)
 و [قرارداد state/context/EOF](SURT_1CB_STATE_CONTRACT.md) برای بازتولید حفظ شده‌اند.
 
 **سابقهٔ پذیرش 1A:** پس از آزمون زیرساخت مصنوعی، بستهٔ واقعی `outputs/surt-base-1a-review` بررسی شد: هش ۴۴ فایل، بارگذاری strict وزن رسمی و decode دو کلیپ انگلیسی و مخلوط معتبرند؛ کاربر شنیدن و تطبیق مرجع/دو شاخه را در ۲۰۲۶-۱۱-۱۳ تأیید کرد. PI-WER دو clean برابر ۰/۸ و ۱/۱۲ و مخلوط ۴/۲۰ است. این whole-batch decode است. [شواهد و آماده‌سازی 1B](experiments/surt_mini_1b_preparation_2026-11-13.md).
@@ -65,7 +69,7 @@ Common Voice فارسی می‌تواند منبع اولیه باشد، اما 
 آماده‌سازی محلی گام ۱A در [runbook مستقل baseline واقعی انگلیسی](KAGGLE_SURT_BASE_ENGLISH_RUNBOOK_FA.md)
 قرار دارد: وزن رسمی Base و BPE پین‌شده، دو کلیپ واقعی و یک مخلوط، whole-batch decode و PI-WER محدود.
 اجرای واقعی 1A، 1B و 1C و تأییدهای مربوط بررسی شده‌اند. [runbook 1B](KAGGLE_SURT_MINI_PERSIAN_RUNBOOK_FA.md)
-برای سابقه و بازتولید حفظ می‌شود؛ [runbook پذیرفته‌شدهٔ 1C-B](KAGGLE_SURT_STREAMING_1CB_RUNBOOK_FA.md) نیز مرجع بازتولید است. کار بعدی طبق پرامپت مرحلهٔ ۲، پس از دستور کاربر خواهد بود.
+برای سابقه و بازتولید حفظ می‌شود؛ [runbook پذیرفته‌شدهٔ 1C-B](KAGGLE_SURT_STREAMING_1CB_RUNBOOK_FA.md) نیز مرجع بازتولید است. ادامهٔ مرحلهٔ ۲ طبق runbook مستقل و فقط پس از رفع مانع دسترسی محدود خواهد بود.
 برای 1C از پوشهٔ کامل run موفق بازیابی کنید؛ اجرای مجدد فاز صفر یا 1A لازم نیست.
 
 چهار نوت‌بوک باقی‌مانده ابزار داده/قرارداد native export هستند و هنوز recipe کامل adaptation فارسی نیستند. `train_asr.py --validate-only` آموزش انجام نمی‌دهد. adapter دادهٔ فعلی هم به‌تنهایی source-featureهای هم‌تراز مورد نیاز recipe را نمی‌سازد. هستهٔ audio، mixture، manifest، معیار و state حفظ شده است؛ مدل قبلی و router حذف شده‌اند. VAD/OSD موجود ابزار تشخیصی عمومی‌اند و ورودی اجباری مسیر SURT نیستند.

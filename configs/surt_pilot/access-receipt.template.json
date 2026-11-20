@@ -1,0 +1,16 @@
+{
+  "dataset_id": "cmu5xazgy00finq074vaqo1b3",
+  "release": "cv-corpus-27.0-2026-09-11",
+  "locale": "fa",
+  "terms_accepted_at": null,
+  "access_verified_at": null,
+  "account_access_evidence": null,
+  "official_subset_route": null,
+  "route_evidence": null,
+  "metadata_sha256": null,
+  "subset_origin_checksum": null,
+  "speaker_mapping_evidence": null,
+  "exposure_history_evidence": null,
+  "reencoded_duplicate_review_evidence": null,
+  "notes": "Private operator receipt, not proof supplied by this template. No API key, signed URL, account identity or full corpus here. Whole-archive extraction is not an authorized pilot acquisition route."
+}

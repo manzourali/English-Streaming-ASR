@@ -1,0 +1,23 @@
+{
+  "version": "user-prefix-exposure/1",
+  "reported_rows_inspected": 5000,
+  "rows_with_identifiers_provided": 3,
+  "missing_exposure_rows": 4997,
+  "metadata": [
+    {
+      "source_id_sha256": "6a46815d82b85a9367751636c2ea056a71992da44505a447b2ac5605e1849313",
+      "speaker_hash": "6e95f5302a7b0b9f72f4c3069f80971a0e0fb035b72d5ea75b74483a17b26746"
+    },
+    {
+      "source_id_sha256": "09a2f2b340a3da0c55dfabc82c5351f2a69832123f1fa3cfb556e6c5ce1a3e9b",
+      "speaker_hash": "6e95f5302a7b0b9f72f4c3069f80971a0e0fb035b72d5ea75b74483a17b26746"
+    },
+    {
+      "source_id_sha256": "228415f35da19d46abd32b9d96ca22c6bbb85c7ff193164f3bb07ee8e59b1803",
+      "speaker_hash": "6e95f5302a7b0b9f72f4c3069f80971a0e0fb035b72d5ea75b74483a17b26746"
+    }
+  ],
+  "source_id_hash_scheme": "sha256(utf8(original_source_basename))",
+  "history_complete": false,
+  "reason": "The pasted output shows only three rows; preserve/export the full 5000-row inspection ledger privately before claiming final-test independence."
+}

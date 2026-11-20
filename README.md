@@ -14,8 +14,10 @@ validation/test PI-WER is 100%; useful Persian recognition is not established.
 bounded full-model state, same-context parity, reset/EOF/tail and pre-EOF tokens.
 The saved checkpoint has only one Persian update; useful Persian adaptation,
 real long-conversation quality and live delivery/endpoint latency remain unproven.
-Stage 2 pilot-data planning is next; it awaits the user's instruction.
+Stage 2 local pilot-data tooling is prepared; its gate remains OPEN pending official bounded subset access, independent split/duplicate evidence and Kaggle execution. No pilot data or tokenizer has been produced yet.
 
+- [Stage 2 bounded pilot data and text runbook](docs/KAGGLE_SURT_PILOT_2_RUNBOOK_FA.md)
+- [Stage 2 source/access blockers and versioned data contract](docs/SURT_PILOT_DATA_CONTRACT_FA.md)
 - [Accepted 1C-B reproducibility runbook and session restoration](docs/KAGGLE_SURT_STREAMING_1CB_RUNBOOK_FA.md)
 - [State, context and EOF contract for 1C-B](docs/SURT_1CB_STATE_CONTRACT.md)
 - [Reviewed stage 1B evidence and limitations](docs/experiments/surt_mini_1b_review_2026-11-19.md)

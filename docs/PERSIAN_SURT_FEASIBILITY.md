@@ -3,7 +3,7 @@
 Updated 2026-11-20. The current research target is Persian language adaptation
 of SURT 2.0 for overlapping voices. The [roadmap](PERSIAN_SURT_ROADMAP_FA.md)
 and [stage prompts](prompts/PERSIAN_SURT_FOLLOWUPS.md) define the next gated work.
-Stages 1A, 1B and technical 1C are accepted; stage 2 has not started.
+Stages 1A, 1B and technical 1C are accepted. Stage 2 local implementation was authorized and prepared on 2026-11-20; its gate remains OPEN.
 
 ## What passed
 
@@ -129,7 +129,33 @@ comparing simulators. See the [roadmap sources](PERSIAN_SURT_ROADMAP_FA.md).
 The prepared stage 2 prompt in [the follow-up prompts](prompts/PERSIAN_SURT_FOLLOWUPS.md)
 limits the next work to source/access verification, bounded pilot-data selection,
 frozen speaker/source-disjoint splits, text policy and tokenizer readiness.
-**Prompt preparation does not authorize starting stage 2. Await the user.**
+**Stage 2 is now authorized only for bounded data/text preparation.** See the
+[independent Kaggle runbook](KAGGLE_SURT_PILOT_2_RUNBOOK_FA.md) and
+[source/access and data contract](SURT_PILOT_DATA_CONTRACT_FA.md). Local tooling,
+versioned schema/config/text policy, exposure inventory and Kaggle-only tests
+are written; no repository tests or pilot audio/tokenizer processing have run.
+User-provided Kaggle access/metadata probes are now reviewed as limited evidence. The official
+10.46GB archive is not an authorized acquisition route under the 256MiB pilot
+cap; a suitable official subset route and its metadata remain unverified.
+The user supplied Kaggle stdout showing HTTP 200 link issuance, HTTP 206 for a
+one-byte Range, and 5000 train.tsv rows after 9,699,328 reported archive bytes,
+with four speakers. The sanitized evidence summary and attachment hash are in
+`configs/surt_pilot/user-access-evidence-v1.json`; this was not reproduced locally.
+HEAD returned 403 while ranged GET succeeded, so HEAD success is not required.
+Account and prefix-metadata access are evidenced; selected audio access is not.
+The reported metadata-directed transfer exceeds the unchanged 8MiB metadata cap.
+The full TSV is 9,403,215 bytes, but the size of the parsed 5000-row portion was
+not reported. Sequential gzip traversal does not establish random clip access.
+Only three exposure identifiers were supplied; 4997 inspected rows are missing
+from the available ledger. Known hashes are excluded by plan; history remains
+incomplete and finalize keeps the gate open. No automatic prefix downloader is
+enabled and no sample endpoint result was supplied. The bounded-access probe
+now sanitizes the observed U+200D credential artifact and compares API archive
+identity with the reviewed metadata, without claiming a computed archive hash.
+Saved mini ledgers contain 600 source IDs, 183 speaker hashes and 9 audio hashes;
+actual CV27 overlap cannot be checked without data. Cross-release speaker
+continuity and reencoded duplicate exclusion also need independent evidence.
+No stage 3, FastMSS or training has started. Gate 2 stays OPEN.
 Do not rerun accepted stages, start full training or download a whole corpus.
 Later simple-mixture pilot adaptation and held-out evaluation must establish
 learning beyond the one-update baseline. FastMSS comparison is a separate,

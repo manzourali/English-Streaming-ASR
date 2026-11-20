@@ -1,0 +1,84 @@
+{
+  "schema_version": "persian-surt-pilot/1",
+  "seed": 20261120,
+  "source": {
+    "dataset_id": "cmu5xazgy00finq074vaqo1b3",
+    "release": "cv-corpus-27.0-2026-09-11",
+    "locale": "fa",
+    "url": "https://mozilladatacollective.com/datasets/cmu5xazgy00finq074vaqo1b3",
+    "license": "CC0-1.0",
+    "access_verified": true,
+    "subset_route_verified": false,
+    "whole_archive_allowed": false,
+    "network_download_enabled": false,
+    "user_reported_api_access": true,
+    "access_status": "Accepted user-provided Kaggle stdout: HTTP 200 download, 206 one-byte Range and first 5000 train.tsv rows. Local reproduction not performed; bounded audio subset remains unverified.",
+    "access_evidence": "configs/surt_pilot/user-access-evidence-v1.json",
+    "prefix_metadata_access_verified_from_user_evidence": true
+  },
+  "limits": {
+    "clips": 360,
+    "speakers": 60,
+    "clips_per_speaker": 8,
+    "duration_seconds": 1800,
+    "clip_seconds_min": 1,
+    "clip_seconds_max": 12,
+    "per_clip_bytes": 2097152,
+    "audio_import_bytes": 268435456,
+    "metadata_bytes": 8388608,
+    "metadata_rows": 5000,
+    "wall_seconds_per_command": 900,
+    "review_bytes": 20971520
+  },
+  "split_percent": {
+    "train": 80,
+    "validation": 10,
+    "test": 10
+  },
+  "minimum_clips_per_split": 2,
+  "text_policy": "fa-latin-v1",
+  "audio": {
+    "rate": 16000,
+    "channel_policy": "mean",
+    "dtype": "float32-le"
+  },
+  "tokenizer": {
+    "vocab_size": 512,
+    "model_type": "bpe",
+    "character_coverage": 1.0,
+    "pad_id": 0,
+    "pad_piece": "<blk>",
+    "unk_id": 1,
+    "bos_id": -1,
+    "eos_id": -1,
+    "normalization_rule_name": "identity",
+    "remove_extra_whitespaces": false,
+    "shuffle_input_sentence": false,
+    "num_threads": 1,
+    "hard_vocab_limit": false
+  },
+  "prior_run": "mini-20261119-d",
+  "training_allowed": false,
+  "augmentation_allowed": false,
+  "checkpoint_transfer": "UNVERIFIED: audit piece-to-ID semantics for embedding, joiner and CTC; reset optimizer for changed parameters",
+  "api_probe": {
+    "base_url": "https://mozilladatacollective.com/api",
+    "secret_name": "Persian_ASR_SURT",
+    "requests": 3,
+    "response_bytes": 1048576,
+    "total_bytes": 2097152,
+    "timeout_seconds": 20,
+    "wall_seconds": 75,
+    "follow_presigned_urls": false,
+    "retries": 0,
+    "environment_variable": "MDC_API_KEY"
+  },
+  "prefix_inspection": {
+    "enabled": false,
+    "candidate_only": true,
+    "metadata_network_cap_bytes": 8388608,
+    "prior_archive_body_bytes_minimum": 9699329,
+    "prior_transport_history_complete": false,
+    "reason": "The user demonstrated sequential metadata access using 9699328 archive payload bytes. A metadata acquisition route under the unchanged 8MiB cap and selected-audio access under the pilot cap remain unproven; no automatic prefix downloader is enabled."
+  }
+}

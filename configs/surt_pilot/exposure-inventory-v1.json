@@ -1,0 +1,32 @@
+{
+  "version": "mini-exposure-inventory/1",
+  "date": "2026-11-20",
+  "files": [
+    {
+      "path": "outputs/surt-mini-1b/mini-20261119-d/exposure-ledger.json",
+      "sha256": "b66c3f498e4d257428dc388c8082749ae3f5fe5d2fc07755b62fbfb17d6f9c28"
+    },
+    {
+      "path": "outputs/surt-mini-1b/mini-20261119-d/inspection-ledger.json",
+      "sha256": "4377ec7b0612893a3eeec525488c1efce3bd638bec9a604d95bf861f9cf9b1d9"
+    },
+    {
+      "path": "outputs/surt-mini-1b/mini-20261119-d/selection.json",
+      "sha256": "cd23283118d071558b271d8cb1d17931bcc4ba7741b1b7c4f77dd35b9e421ac6"
+    }
+  ],
+  "unique_values": {
+    "speaker_hash": 183,
+    "source_id": 600,
+    "original_sha256": 9,
+    "waveform_sha256": 9
+  },
+  "rows_without_speaker_hash": 0,
+  "speaker_hash_scheme": "sha256(utf8(\"cv-client:\" + client_id.strip()))",
+  "cv27_overlap_result": "UNAVAILABLE: CV27 metadata/audio absent; no overlap-free claim",
+  "limitations": [
+    "Only saved ledgers available in this workspace; discover additional private failed attempts on Kaggle",
+    "Cross-release client_id continuity not independently established",
+    "Float32 canonical hashes detect exact audio only; reencoded/trimmed duplicates need independent evidence"
+  ]
+}
