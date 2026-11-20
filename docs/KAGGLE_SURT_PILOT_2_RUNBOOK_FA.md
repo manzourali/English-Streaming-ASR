@@ -127,16 +127,23 @@ pipeline است. شکست resolver/drift را با تغییر pin یا حذف ca
 نام Secret حساب شما `Persian_ASR_SURT` است؛ مقدار آن فقط برای فرایند فرزند در متغیر
 محیطی استاندارد `MDC_API_KEY` قرار می‌گیرد. نام Secret با نام متغیر محیطی یکی نیست.
 
-این یک سلول **پایتون** است؛ `%%bash` نگذارید. از Python میزبان فقط برای دسترسی به
-Kaggle Secrets استفاده می‌کند؛ probe با Python محیط پین‌شده اجرا می‌شود. header، کلید
-و پاسخ خام چاپ نمی‌شوند. فرایند فرزند کاراکتر نامرئی U+200D گزارش‌شده در کلید را حذف
-و قالب ASCII را بررسی می‌کند؛ نیاز به تغییر دستی یا چاپ Secret نیست. ممکن است حداکثر دو درخواست صدور لینک از سهمیهٔ API حساب
-مصرف شود؛ به‌صورت خودکار retry نمی‌شود. خطای 401/403 را با تعویض منبع یا تغییر pin حل نکنید.
+این یک سلول **پایتون** است؛ `%%bash` نگذارید. Secret و درخواست کنترلی HTTP با همان
+Python میزبان notebook و `requests` موجود در آن اجرا می‌شوند تا با کد موفق کاربر یکسان
+باشند. محیط عددی پین‌شدهٔ مرحلهٔ ۲ دست‌نخورده می‌ماند؛ پکیج تازه نصب نمی‌شود و نسخهٔ
+requests/Python میزبان در گزارش ثبت می‌شود. POST بدون body و بدون Content-Type اجباری
+ارسال می‌شود؛ GET کاتالوگ قبل از آن حذف شده است. header، کلید و پاسخ خام چاپ نمی‌شوند.
+کاراکتر نامرئی U+200D گزارش‌شده در کلید حذف و قالب ASCII بررسی می‌شود.
+
+به‌صورت پیش‌فرض فقط `/download` بررسی می‌شود: یک درخواست صدور لینک، بدون retry،
+HEAD یا دریافت صوت. `CHECK_SAMPLE=False` را برای بررسی دسترسی حساب نگه دارید؛ sample
+بررسی مستقلی است و تنها با `True` یک درخواست دوم می‌فرستد. این تغییر درخواست را با کد
+موفق کاربر هماهنگ می‌کند، اما بدون اجرای Kaggle نمی‌توان رفع 403 را تضمین کرد.
 
 ```python
 from pathlib import Path
 import os
 import subprocess
+import sys
 import time
 from kaggle_secrets import UserSecretsClient
 
@@ -144,8 +151,9 @@ pilot = Path('/kaggle/working/surt-pilot-2')
 run = Path((pilot / 'active-run.txt').read_text().strip())
 if run.parent != pilot / 'runs' or not (run / 'logs').is_dir():
     raise RuntimeError('ابتدا سلول ۱ را با Run ID تازه اجرا کنید')
+CHECK_SAMPLE = False
 log_path = run / 'logs' / f'cell-02b-access-{time.time_ns()}.log'
-print(f'کار: بررسی API و sample بدون دریافت صوت؛ log: {log_path}')
+print(f'کار: بررسی دسترسی دیتاست با requests؛ sample اختیاری={CHECK_SAMPLE}؛ log: {log_path}')
 try:
     secret = UserSecretsClient().get_secret('Persian_ASR_SURT')
 except Exception:
@@ -155,8 +163,9 @@ child_env['MDC_API_KEY'] = secret
 try:
     with log_path.open('x') as log:
         completed = subprocess.run([
-            '/kaggle/working/surt-venv-py312/bin/python',
-            '/kaggle/working/English-Streaming-ASR/scripts/surt_pilot/access.py', str(run)
+            sys.executable,
+            '/kaggle/working/English-Streaming-ASR/scripts/surt_pilot/access.py', str(run),
+            *(['--check-sample'] if CHECK_SAMPLE else [])
         ], env=child_env, stdout=log, stderr=subprocess.STDOUT)
 finally:
     child_env.pop('MDC_API_KEY', None)
@@ -166,6 +175,19 @@ print('\n'.join(lines[-5:]))
 if completed.returncode:
     raise RuntimeError(f'بررسی API کامل نشد؛ exit={completed.returncode}؛ log و گزارش را حفظ کنید')
 ```
+
+اگر فقط HTTP 403 دیده‌اید، خط کامل تعیین‌کننده است: `download HTTP=403` یعنی همین
+درخواست صدور لینک رد شده است؛ sample هنوز درخواستی نداشته است. `download HTTP=200`
+و `sample HTTP=403` یعنی دسترسی دیتاست تأیید شده و فقط بررسی sample رد شده است؛ این
+حالت شکست توکن محسوب نمی‌شود. علت دقیق 403 در اجرای قبلی کاربر مشخص نیست: نسخهٔ قدیمی
+از urllib در venv و POST با `{}` استفاده می‌کرد، درحالی‌که کد موفق کاربر requests میزبان
+و POST بدون body بود. تفاوت client/بدنه علت‌های محتمل‌اند و اثبات نشده‌اند.
+
+برای اعمال تغییر، ابتدا کاربر commit/push کند؛ سلول ۱ را با SHA دقیق تازه و Run ID تازه،
+سپس سلول ۲ و ۲ب اجرا کنید. محیط موجود در سلول ۲ فقط ممیزی می‌شود. run شکست‌خوردهٔ
+`pilot2-20261120-a` و logهای آن حفظ شوند؛ فایل‌ها را در همان run ویرایش یا overwrite نکنید.
+از هر دو گزارش HTTP status و نوع پاسخ استفاده کنید؛ پاسخ HTML/challenge می‌تواند به
+بررسی لایهٔ وب کمک کند ولی به‌تنهایی علت را اثبات نمی‌کند. کلید و URL را ارسال نکنید.
 
 `download HTTP=200` همراه `authenticated_access_confirmed=true` یعنی صدور لینک واقعی
 تأیید شده است. sample برابر 404 یعنی دیتاست یافت نشد یا sample منتشر نشده؛ از این status

@@ -67,11 +67,14 @@
     "requests": 3,
     "response_bytes": 1048576,
     "total_bytes": 2097152,
-    "timeout_seconds": 20,
+    "timeout_seconds": 30,
     "wall_seconds": 75,
     "follow_presigned_urls": false,
     "retries": 0,
-    "environment_variable": "MDC_API_KEY"
+    "environment_variable": "MDC_API_KEY",
+    "transport": "requests in Kaggle notebook host Python; version recorded, no install in pinned numerical venv",
+    "sample_check_default": false,
+    "authenticated_request_body": "none"
   },
   "prefix_inspection": {
     "enabled": false,

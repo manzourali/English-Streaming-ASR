@@ -1,6 +1,7 @@
 """Stage-2 contract tests. Execute only on Kaggle; synthetic unit fixtures are not ASR evidence."""
 import argparse
 import copy
+import io
 import json
 from pathlib import Path
 import platform
@@ -14,7 +15,7 @@ if platform.system() != 'Linux' or not Path('/kaggle/working').is_dir():
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'scripts/surt_pilot'))
 import pipeline as pilot
-from access import NoRedirect, clean_key, identity_matches, safe_details
+from access import Probe, clean_key, identity_matches, safe_details
 from policy import normalize
 
 
@@ -42,6 +43,65 @@ class TextPolicyTests(unittest.TestCase):
 
 
 class AccessProbeTests(unittest.TestCase):
+    class Raw(io.BytesIO):
+        def read(self, size=-1, decode_content=False):
+            return super().read(size)
+
+    class Response:
+        def __init__(self, status, body, kind='application/json'):
+            self.status_code = status
+            self.headers = {'Content-Type': kind}
+            self.raw = AccessProbeTests.Raw(body)
+            self.closed = False
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            self.closed = True
+
+    class Session:
+        def __init__(self, response):
+            self.response = response
+            self.calls = []
+
+        def post(self, endpoint, **kwargs):
+            self.calls.append((endpoint, kwargs))
+            return self.response
+
+        def close(self):
+            pass
+
+    def probe(self, response):
+        session = self.Session(response)
+        return Probe('unit-key', dict(requests=2, response_bytes=1024,
+                     total_bytes=2048, timeout_seconds=30), session=session), session
+
+    def test_matches_successful_empty_post_and_never_follows_redirects(self):
+        response = self.Response(200, b'{"downloadUrl":"https://example.invalid/signed"}')
+        probe, session = self.probe(response)
+        result = probe.call('https://example.invalid/download', authenticated=True)
+        kwargs = session.calls[0][1]
+        self.assertNotIn('data', kwargs)
+        self.assertNotIn('json', kwargs)
+        self.assertNotIn('Content-Type', kwargs['headers'])
+        self.assertEqual(kwargs['headers']['Accept'], 'application/json')
+        self.assertTrue(kwargs['stream'])
+        self.assertFalse(kwargs['allow_redirects'])
+        self.assertTrue(result['presigned_url_returned'])
+        self.assertTrue(response.closed)
+
+    def test_403_html_is_reported_without_reading_error_body(self):
+        response = self.Response(403, b'private server response', 'text/html')
+        probe, session = self.probe(response)
+        result = probe.call('https://example.invalid/download', authenticated=True)
+        self.assertEqual(result['http_status'], 403)
+        self.assertEqual(result['response_kind'], 'html')
+        self.assertEqual(response.raw.tell(), 0)
+        self.assertTrue(response.closed)
+        self.assertEqual(len(session.calls), 1)
+        self.assertNotIn('private server response', json.dumps(result))
+
     def test_observed_zero_width_joiner_artifact_is_removed(self):
         self.assertEqual(clean_key(' \u200dunit\u200d-key\n'), 'unit-key')
         for value in ('', 'unit\nkey', 'unit\u200bkey', 'unit key'):
@@ -73,10 +133,6 @@ class AccessProbeTests(unittest.TestCase):
         self.assertNotIn('filename', result)
         self.assertNotIn('size_bytes', result)
         self.assertNotIn('checksum_sha256', result)
-
-    def test_auth_redirect_is_never_followed(self):
-        self.assertIsNone(NoRedirect().redirect_request(None, None, 302, '', {}, 'https://example.invalid'))
-
 
 class SplitTests(unittest.TestCase):
     def test_seeded_assignment_and_speaker_group(self):

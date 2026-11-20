@@ -7,9 +7,8 @@ import platform
 import re
 import signal
 import subprocess
+import sys
 import time
-import urllib.error
-import urllib.request
 
 from pipeline import CONFIG, dump, read
 
@@ -21,12 +20,6 @@ def clean_key(value):
     if not key or any(not 33 <= ord(char) <= 126 for char in key):
         raise ValueError('Invalid credential formatting; check the Kaggle Secret without printing it')
     return key
-
-
-class NoRedirect(urllib.request.HTTPRedirectHandler):
-    def redirect_request(self, req, fp, code, msg, headers, newurl):
-        # Never forward an Authorization header to another location.
-        return None
 
 
 def safe_details(value):
@@ -60,50 +53,72 @@ def identity_matches(details, evidence):
 
 
 class Probe:
-    def __init__(self, key, limits):
+    def __init__(self, key, limits, session=None):
         self.key = key
         self.limits = limits
         self.received = 0
         self.requests = 0
-        self.opener = urllib.request.build_opener(NoRedirect())
+        if session is None:
+            # Control-plane requests run in the Kaggle notebook's host Python,
+            # matching the user's successful requests.post, without changing the
+            # pinned numerical environment or installing another dependency.
+            import requests
+            self.session = requests.Session()
+            self.transport_version = requests.__version__
+        else:
+            self.session = session
+            self.transport_version = 'injected-unit-fixture'
+
+    def close(self):
+        self.session.close()
 
     def call(self, endpoint, authenticated=False):
         if self.requests >= self.limits['requests']:
             raise ValueError('API request cap exceeded')
+        remaining = min(self.limits['response_bytes'], self.limits['total_bytes'] - self.received)
+        if remaining <= 0:
+            raise ValueError('API total byte cap exhausted before request')
         self.requests += 1
         headers = {'Accept': 'application/json'}
         if authenticated:
             headers['Authorization'] = 'Bearer ' + self.key
-            headers['Content-Type'] = 'application/json'
-        request = urllib.request.Request(endpoint, data=b'{}' if authenticated else None,
-                                         headers=headers, method='POST' if authenticated else 'GET')
         try:
-            with self.opener.open(request, timeout=self.limits['timeout_seconds']) as response:
-                remaining = min(self.limits['response_bytes'], self.limits['total_bytes'] - self.received)
+            method = self.session.post if authenticated else self.session.get
+            # Deliberately no data=, json= or Content-Type: same empty POST as
+            # the user's successful Kaggle code. Redirects never forward a key.
+            with method(endpoint, headers=headers, stream=True, allow_redirects=False,
+                        timeout=self.limits['timeout_seconds']) as response:
+                content_type = response.headers.get('Content-Type', '').lower()
+                info = dict(http_status=response.status_code,
+                            response_kind=('json' if 'json' in content_type else
+                                           'html' if 'html' in content_type else 'other'),
+                            web_challenge=response.headers.get('cf-mitigated', '').lower() == 'challenge')
+                # Do not consume or expose arbitrary error bodies.
+                if response.status_code != 200:
+                    return info
                 blocks = []
                 while remaining > 0:
-                    block = response.read(min(65536, remaining))
+                    block = response.raw.read(min(65536, remaining), decode_content=True)
                     if not block:
                         payload = json.loads(b''.join(blocks))
                         if not isinstance(payload, dict):
                             raise ValueError('Expected JSON object')
-                        return dict(http_status=response.status, **safe_details(payload))
+                        return dict(info, **safe_details(payload))
                     blocks.append(block)
                     remaining -= len(block)
                     self.received += len(block)
-                # Do not read even one byte beyond the control-plane ceiling.
                 raise ValueError('API response/total byte cap reached')
-        except urllib.error.HTTPError as error:
-            status = error.code
-            error.close()  # Do not print or persist server error bodies.
-            return dict(http_status=status)
-        except (urllib.error.URLError, TimeoutError, OSError):
-            return dict(http_status=None, error='network_or_timeout; details omitted to protect secrets')
+        except (ValueError, TimeoutError):
+            raise
+        except Exception as error:
+            # Exception text can include request URLs/headers: retain only type.
+            return dict(http_status=None, error='network_or_timeout', error_type=type(error).__name__)
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('run', type=Path)
+    parser.add_argument('--check-sample', action='store_true', help='Optional; distinct from dataset authentication')
     args = parser.parse_args()
     if platform.system() != 'Linux' or not Path('/kaggle/working').is_dir():
         raise RuntimeError('Authenticated access probing is Kaggle-only')
@@ -126,12 +141,13 @@ def main():
     report = dict(dataset_id=config['source']['dataset_id'],
                   checked_at_utc=time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()),
                   user_reported_account_access=True, authenticated_access_confirmed=False,
-                  audio_downloaded=False, asset_requests=0, gate_2='OPEN', endpoints={})
+                  audio_downloaded=False, asset_requests=0, gate_2='OPEN', endpoints={},
+                  transport=dict(client='requests', version=probe.transport_version,
+                                 python=sys.executable, python_version=platform.python_version(),
+                                 authenticated_method='POST', request_body='none'),
+                  sample_check_requested=args.check_sample)
     base = settings['base_url'] + '/datasets/' + config['source']['dataset_id']
     try:
-        report['endpoints']['details'] = probe.call(base)
-        if report['endpoints']['details'].get('http_status') == 429:
-            raise ValueError('Public API rate limited; no further requests')
         full = probe.call(base + '/download', authenticated=True)
         report['endpoints']['download'] = full
         report['authenticated_access_confirmed'] = full.get('http_status') == 200 and full.get('presigned_url_returned') is True
@@ -141,7 +157,7 @@ def main():
         if report['authenticated_access_confirmed'] and not report['archive_identity_matches_reviewed_api_metadata']:
             report['error'] = 'archive_identity_changed_or_incomplete; preserve evidence and review source version'
         # No retry, no asset GET. 401/403/429 must not trigger another auth request.
-        if report['authenticated_access_confirmed'] and 'error' not in report:
+        if args.check_sample and report['authenticated_access_confirmed'] and 'error' not in report:
             sample = probe.call(base + '/sample-download', authenticated=True)
             report['endpoints']['sample_download'] = sample
             report['sample_link_available'] = sample.get('http_status') == 200 and sample.get('presigned_url_returned') is True
@@ -152,11 +168,23 @@ def main():
         report['error'] = 'response_schema_size_or_time_limit; raw response omitted'
     finally:
         signal.alarm(0)
+        probe.close()
         report.update(control_plane_bytes=probe.received, api_requests=probe.requests)
         dump(report_path, report)
     full_status = report['endpoints'].get('download', {}).get('http_status')
     sample_status = report['endpoints'].get('sample_download', {}).get('http_status')
-    print(f'بررسی API ثبت شد: download HTTP={full_status}، sample HTTP={sample_status}؛ صوت دریافت نشد، کلید و URL موقت ذخیره نشدند؛ gate داده باز است.')
+    print(f'نتیجه: download HTTP={full_status}؛ دسترسی دیتاست ' +
+          ('تأیید شد.' if report['authenticated_access_confirmed'] else 'در این درخواست تأیید نشد؛ علت دقیق از status تنها مشخص نیست.'))
+    if args.check_sample:
+        print(f'sample HTTP={sample_status}؛ نتیجهٔ sample از تأیید دسترسی دیتاست جداست.')
+    else:
+        print('sample بررسی نشد؛ بررسی آن اختیاری است و این اجرا فقط دسترسی دیتاست را می‌سنجد.')
+    if full_status == 403:
+        full = report['endpoints']['download']
+        print(f"تشخیص امن: نوع پاسخ={full.get('response_kind')}؛ web challenge={full.get('web_challenge')}؛ بدنه و header محرمانه چاپ نشدند.")
+    if report.get('error'):
+        print('مانع مستقل: ' + report['error'])
+    print(f'صوت دریافت نشد؛ gate داده باز است. گزارش: {report_path}')
     if not report['authenticated_access_confirmed'] or 'error' in report:
         raise SystemExit(1)
 
