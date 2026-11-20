@@ -5,7 +5,7 @@
 هش هشت فایل مؤثر در `configs/surt_stream/native-source.json` پین شده است؛ runner
 مسیرهای resolveشدهٔ Zipformer/decoder/joiner را هم بررسی می‌کند. نسخهٔ dependency،
 وزن یک-update، tokenizer ۱۲۸تایی و آرگومان‌های معماری 1B تغییر نکرده‌اند.
-این سند قرارداد پیاده‌سازی است؛ هنوز شواهد اجرای 1C-B دریافت نشده است.
+این قرارداد در اجرای `streamb-20261120-a` روی Kaggle آزموده و gate فنی آن در ۲۰۲۶-۱۱-۲۰ پذیرفته شد. شواهد در `outputs/streamb-20261120-a/` است؛ پذیرش کیفیت فارسی یا latency زنده را شامل نمی‌شود.
 
 ## DPRNN
 

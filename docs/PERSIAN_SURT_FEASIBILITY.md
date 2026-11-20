@@ -1,8 +1,9 @@
 # Persian SURT feasibility — current evidence and open gates
 
-Updated 2026-11-19. The current research target is Persian language adaptation
+Updated 2026-11-20. The current research target is Persian language adaptation
 of SURT 2.0 for overlapping voices. The [roadmap](PERSIAN_SURT_ROADMAP_FA.md)
-and [stage 1C runbook](KAGGLE_SURT_STREAMING_RUNBOOK_FA.md) define current work.
+and [stage prompts](prompts/PERSIAN_SURT_FOLLOWUPS.md) define the next gated work.
+Stages 1A, 1B and technical 1C are accepted; stage 2 has not started.
 
 ## What passed
 
@@ -26,18 +27,56 @@ complete mixtures on 2026-11-19. See the [review](experiments/surt_mini_1b_revie
 Mini validation/test PI-WER is 100%; held-out tokenizer coverage is incomplete.
 This is structural feasibility, not learned Persian accuracy.
 
+Stage 1C is technically accepted after review of `streamb-20261120-a` at
+`outputs/streamb-20261120-a/`, project commit
+`ca2c3be77e214f383e5fef841a01f008642b2cc1`. Eight saved upstream source hashes
+match 1C-A, dependencies retain their pins, and 1B inputs remained unchanged.
+Three native GPU tests passed (38.477s), including 21 boundary prefixes and a
+120s repeated-real-audio storage stress; three real kaldifeat tests also passed.
+
+- Same-context full-mixture parity: max mask error 9.536743e-6; final tensor
+  error 7.688999e-6, within the unchanged atol=2e-4, rtol=1e-4 contract.
+- Ordered branch IDs and token frame indices match the reference and packet
+  partitions. Reset, repeated EOF and EOF on the last packet passed.
+- For 444 features, 96 encoder frames preceded EOF and 13 were flushed at EOF,
+  totaling the expected 109. Branch tokens appeared at received audio times
+  0.7s and 2.0s, before the 4.436s file ended.
+- Acoustic storage at aligned stress checkpoints stayed at 2,515,808 bytes;
+  measured peak was 2,534,112 bytes (2.42 MiB). Repetition tests storage, not
+  recognition of a real long conversation.
+- One Tesla T4, FP32, two warmups/five measurements, CUDA synchronization:
+  median compute RTF 0.230645, allocated peak 289.02 MiB, reserved 432 MiB.
+  These are inference measurements, not full-training memory/cost estimates.
+- First nominal acoustic context is 647.5ms. With 100ms packets, first output
+  follows 700ms received audio; simulated readiness is about 764ms. Block-anchor
+  simulated delays span 723–804ms. Live delivery and endpoint remain unmeasured.
+
+`result.json` now records the authorized post-run review as `ACCEPTED_TECHNICAL`;
+`result.before-review.json` preserves the original `REVIEW_REQUIRED` result and
+its hash is included in the review. Raw logs and measurements are unchanged.
+The initial restore attempt lacked `features/train.jsonl.gz`; a later restore
+succeeded. Three nonblocking Git messages also remain in the native cell log;
+explicit revision/hash checks and the experiment completed successfully.
+
+The checkpoint still contains just **one saved Persian training update**.
+Seven 1C-A resource-probe updates were disposable and did not change that
+checkpoint. Most new vocabulary rows were newly initialized in 1B. Outputs
+«ست» and «ویی» are compatible with this minimal training; they establish neither
+useful Persian recognition nor the impossibility of successful adaptation.
+
 ## What has not passed
 
 | Gate | Remaining evidence |
 | --- | --- |
 | Useful Persian recognition | Controlled adaptation beyond the accepted one-step mini; coverage and independent quality evidence |
-| Incremental streaming | Persistent bounded state, chunk/EOF behavior, context-compatible reference, real latency measurements |
-| Resource feasibility | Peak device/process memory distinction, per-step time, data lengths and budget estimates on the actual GPU |
+| Live deployment and long-conversation quality | Technical bounded streaming passed; measured microphone/network/endpoint latency and real long-conversation evaluation remain |
+| Training-scale resource feasibility | 1C-A short-batch resource probe and 1C-B inference measured; pilot-training and larger-scale costs still need evidence |
 | Thesis quality | Controlled data simulation/adaptation and held-out ORC-WER, not tone WER |
 
 **Decision: the Persian project's feasibility phase is not complete.** A tiny
 successful Persian update is a structural gate, not proof of learned accuracy.
-Whole-batch decode with constrained attention is not an incremental-state test.
+The technical streaming gate is closed as accepted under its same-context B=1
+protocol; the overall Persian quality/cost feasibility decision remains open.
 
 ## Existing scaffold and limits
 
@@ -87,13 +126,13 @@ comparing simulators. See the [roadmap sources](PERSIAN_SURT_ROADMAP_FA.md).
 
 ## Next action
 
-Run the bounded [stage 1C component/resource procedure](KAGGLE_SURT_STREAMING_RUNBOOK_FA.md)
-in Kaggle, after pushing the prepared code yourself. Restore the complete saved
-1B directory in a fresh session; phase 0 and 1A do not need to be rerun. Its first
-cell updates the checkout to the explicit pushed SHA. The first 1C pass gathers
-source/API and component/resource evidence; native end-to-end streaming remains
-open until exact state adapters and full reset/EOF/context tests pass.
-Then use [the gated follow-up prompts](prompts/PERSIAN_SURT_FOLLOWUPS.md) for
-stateful execution/resources, corpus preparation, adaptation and evaluation.
-Keep all unexecuted measurements explicitly unmeasured until actual logs
-exist. Archive current logs using [this single-file procedure](KAGGLE_SURT_ARTIFACTS_FA.md).
+The prepared stage 2 prompt in [the follow-up prompts](prompts/PERSIAN_SURT_FOLLOWUPS.md)
+limits the next work to source/access verification, bounded pilot-data selection,
+frozen speaker/source-disjoint splits, text policy and tokenizer readiness.
+**Prompt preparation does not authorize starting stage 2. Await the user.**
+Do not rerun accepted stages, start full training or download a whole corpus.
+Later simple-mixture pilot adaptation and held-out evaluation must establish
+learning beyond the one-update baseline. FastMSS comparison is a separate,
+alignment-dependent research extension, not a prerequisite for the first basic
+Persian-learning decision. Training budgets and success criteria must be set
+before those experiments; no final WER target is inferred from current results.

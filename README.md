@@ -10,9 +10,13 @@ The synthetic infrastructure smoke and real English stage 1A passed. The real
 Persian mini run `mini-20261119-d` passed the stage 1B technical gate, including
 one update, strict reload and the user's auditory confirmation. Its mini
 validation/test PI-WER is 100%; useful Persian recognition is not established.
-**Native incremental streaming remains an open stage 1C gate.**
+**The technical 1C streaming gate is accepted** for `streamb-20261120-a`:
+bounded full-model state, same-context parity, reset/EOF/tail and pre-EOF tokens.
+The saved checkpoint has only one Persian update; useful Persian adaptation,
+real long-conversation quality and live delivery/endpoint latency remain unproven.
+Stage 2 pilot-data planning is next; it awaits the user's instruction.
 
-- [Current runbook: stage 1C-B native streaming and session restoration](docs/KAGGLE_SURT_STREAMING_1CB_RUNBOOK_FA.md)
+- [Accepted 1C-B reproducibility runbook and session restoration](docs/KAGGLE_SURT_STREAMING_1CB_RUNBOOK_FA.md)
 - [State, context and EOF contract for 1C-B](docs/SURT_1CB_STATE_CONTRACT.md)
 - [Reviewed stage 1B evidence and limitations](docs/experiments/surt_mini_1b_review_2026-11-19.md)
 - [Later gated prompts: mini Persian → data → adaptation → evaluation](docs/prompts/PERSIAN_SURT_FOLLOWUPS.md)
@@ -28,21 +32,20 @@ The actual pinned Icefall recipe is the current model-execution path. A compatib
 trained native export and the external training backend for this repository's
 wrappers are not supplied. Those missing wrappers do not block testing the
 upstream pretrained recipe. Mini Persian vocabulary transfer has actual Kaggle
-evidence; ORC-WER, continuous streaming and useful adaptation quality still need
-their own implementation and validation.
+evidence. The 1C-B upstream adapters now have bounded stateful streaming evidence;
+held-out ORC-WER, real live delivery and useful Persian quality still need validation.
 
 The old single-stream comparison model, baseline notebook and heuristic-router
 artifacts have been removed. Generic VAD/OSD diagnostics are retained outside
 the SURT recognition path. Shared device selection lives in `utils/device.py`.
 
-### Hardware Constraints & Optimization
+### Hardware and precision
 
-- **Execution Target:** The environment is limited to 2x Tesla T4 GPUs on Kaggle.
-- **Strict Compliance:** Do not attempt to utilize multi-GPU configs designed for V100/A100 clusters (e.g., high batch sizes or large context windows).
-- **Mandatory Optimizations:**
-    1. Use `GradientAccumulation` to simulate large batch sizes.
-    2. Enforce `FP16` mixed-precision to stay within the 16GB VRAM limit per card.
-    3. If `CUDA Out of Memory` occurs, prioritize `segment_length` reduction before batch size reduction.
+Accepted 1C-B evidence uses one Tesla T4, FP32 and the pinned CUDA environment.
+Do not assume multi-GPU availability or enforce an unvalidated FP16 switch.
+Later pilot training must measure its own duration, batch, memory and precision
+budget on Kaggle. Accumulation or mixed precision requires an explicit, validated
+training configuration; small-batch results are not a full-training cost forecast.
 
 ## Existing diagnostic notebooks
 

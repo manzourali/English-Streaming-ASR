@@ -4,22 +4,26 @@
 
 ## وضعیت کنونی
 
-به‌روزرسانی ۲۰۲۶-۱۱-۲۰: سورس و شواهد 1C-A بررسی و adapterهای 1C-B محلی آماده شده‌اند؛
-اجرای 1C-B هنوز انجام نشده و gate باز است. مسیر اجرای فعلی:
-[runbook مستقل 1C-B](KAGGLE_SURT_STREAMING_1CB_RUNBOOK_FA.md) و
-[قرارداد state/context/EOF](SURT_1CB_STATE_CONTRACT.md).
+به‌روزرسانی ۲۰۲۶-۱۱-۲۰: **gateهای فنی 1A، 1B و 1C پذیرفته‌اند؛ امکان‌سنجی کیفیت فارسی هنوز تکمیل نشده است.**
+اجرای `streamb-20261120-a` در `outputs/streamb-20261120-a/` پس از بازبینی پذیرفته شد:
+parity دوشاخه با مرجع هم‌context، packetهای متفاوت، reset، EOF/tail، token پیش از پایان
+فایل و storage محدود در stress تکرار صوت ۱۲۰ثانیه‌ای پاس شده‌اند.
+RTF میانه روی T4/FP32 برابر ۰٫۲۳۱، peak state حدود ۲٫۴۲MiB است؛ latency زنده و
+کیفیت جلسهٔ بلند اندازه‌گیری نشده‌اند. [وضعیت و محدودیت‌ها](PERSIAN_SURT_FEASIBILITY.md).
+`result.json` اکنون `ACCEPTED_TECHNICAL` دارد؛ نتیجهٔ خام در `result.before-review.json` حفظ شده است.
 
-به‌روزرسانی ۲۰۲۶-۱۱-۱۹: **گام‌های 1A و 1B از نظر فنی پذیرفته شده‌اند؛ gate استریم 1C باز است.**
-run واقعی `mini-20261119-d` یک update، gradient/delta، reload strict و decode دوشاخه‌ای
-را ثبت کرده و کاربر تطبیق هشت clean و چهار مخلوط کامل را تأیید کرده است.
-[گزارش پذیرش و محدودیت‌های 1B](experiments/surt_mini_1b_review_2026-11-19.md).
-PI-WER mini برابر ۱۰۰٪ و tokenizer دارای unknown در validation است؛ کیفیت فارسی هنوز
-اثبات نشده است. مسیر جاری [runbook 1C](KAGGLE_SURT_STREAMING_RUNBOOK_FA.md) است:
-بخش A ممیزی API/feature/state اجزا و منابع؛ بخش B اتصال native و شواهد استریم کامل.
-موفقیت بخش A به‌تنهایی gate 1C را نمی‌بندد. فایل [master_prompt.md](../master_prompt.md)
-قواعد دائمی اجرای فقط روی Kaggle و بازیابی session را ثبت می‌کند.
+1B با checkpoint یک-update و reload strict پذیرفته شده؛ هشت clean و چهار mixture
+تأیید شنیداری کاربر دارند. [گزارش 1B](experiments/surt_mini_1b_review_2026-11-19.md).
+PI-WER mini برابر ۱۰۰٪ و پوشش tokenizer روی held-out ناقص است. یک update ذخیره‌شده
+و updateهای موقت resource probe جای fine-tuning کنترل‌شده را نمی‌گیرند؛ خروجی «ست» و
+«ویی» شواهد یادگیری فارسی نیست و به‌تنهایی شکست adaptation نهایی را هم ثابت نمی‌کند.
 
-**گام 1A پذیرفته شده؛ امکان‌سنجی کامل فارسی هنوز تکمیل نشده است.** پس از آزمون زیرساخت مصنوعی، بستهٔ واقعی `outputs/surt-base-1a-review` بررسی شد: هش ۴۴ فایل، بارگذاری strict وزن رسمی و decode دو کلیپ انگلیسی و مخلوط معتبرند؛ کاربر شنیدن و تطبیق مرجع/دو شاخه را در ۲۰۲۶-۱۱-۱۳ تأیید کرد. PI-WER دو clean برابر ۰/۸ و ۱/۱۲ و مخلوط ۴/۲۰ است. این whole-batch decode است. [شواهد و آماده‌سازی 1B](experiments/surt_mini_1b_preparation_2026-11-13.md).
+گام بعدی رسمی، **مرحلهٔ ۲: داده و سیاست نوشتار برای یک پایلوت محدود** است.
+[پرامپت مرحلهٔ ۲](prompts/PERSIAN_SURT_FOLLOWUPS.md) آماده است؛ خود مرحله هنوز شروع
+نشده و منتظر دستور کاربر است. [runbook 1C-B](KAGGLE_SURT_STREAMING_1CB_RUNBOOK_FA.md)
+و [قرارداد state/context/EOF](SURT_1CB_STATE_CONTRACT.md) برای بازتولید حفظ شده‌اند.
+
+**سابقهٔ پذیرش 1A:** پس از آزمون زیرساخت مصنوعی، بستهٔ واقعی `outputs/surt-base-1a-review` بررسی شد: هش ۴۴ فایل، بارگذاری strict وزن رسمی و decode دو کلیپ انگلیسی و مخلوط معتبرند؛ کاربر شنیدن و تطبیق مرجع/دو شاخه را در ۲۰۲۶-۱۱-۱۳ تأیید کرد. PI-WER دو clean برابر ۰/۸ و ۱/۱۲ و مخلوط ۴/۲۰ است. این whole-batch decode است. [شواهد و آماده‌سازی 1B](experiments/surt_mini_1b_preparation_2026-11-13.md).
 
 ## ارزیابی پرامپت پیشنهادی
 
@@ -46,6 +50,8 @@ PI-WER mini برابر ۱۰۰٪ و tokenizer دارای unknown در validation 
 | ۵ — ارزیابی | ORC-WER روی test ثابت برای هر سطح overlap؛ code-switching مستقل و اختیاری | خروجی گفتار واقعی، شمارش خطا/کلمات، پروتکل normalization/segmentation ثابت؛ PI-WER کوتاه را ORC-WER ننامید |
 | ۶ — جمع‌بندی | مدل/recipe تطبیق‌یافته، تولید داده، جدول آزمایش‌ها و محدودیت‌ها | ادعا فقط متناسب با داده، کیفیت و streaming اندازه‌گیری‌شده |
 
+برای تصمیم اولیهٔ امکان‌سنجی فارسی، نسخهٔ محدود مراحل ۲ تا ۶ اجرا می‌شود: دادهٔ پایلوت، مخلوط ساده، adaptation کوتاه، ارزیابی مستقل و تصمیم مستند. FastMSS و مقایسهٔ آن با baseline ساده، توسعهٔ پژوهشی بعدی با پیش‌نیاز alignment است و شرط لازم نخستین اثبات یادگیری فارسی نیست. کیفیت و بودجهٔ قابل قبول باید پیش از آموزش پایلوت مشخص شوند.
+
 هر گام به خروجی گام قبل وابسته است. یک اجرای کوتاه نمی‌تواند کیفیت نهایی یا هزینهٔ کل آموزش را تضمین کند. ساخت دادهٔ انبوه و fine-tuning طولانی پیش از روشن‌شدن ۱A–۱C برنامه‌ریزی نشده‌اند. آزمون overfit احتمالی فقط روی train انجام شود و با نتیجهٔ held-out اشتباه نشود.
 
 ## داده و منابع
@@ -58,15 +64,15 @@ Common Voice فارسی می‌تواند منبع اولیه باشد، اما 
 
 آماده‌سازی محلی گام ۱A در [runbook مستقل baseline واقعی انگلیسی](KAGGLE_SURT_BASE_ENGLISH_RUNBOOK_FA.md)
 قرار دارد: وزن رسمی Base و BPE پین‌شده، دو کلیپ واقعی و یک مخلوط، whole-batch decode و PI-WER محدود.
-اجرای واقعی 1A و 1B و تأییدهای شنیداری بررسی شده‌اند. [runbook 1B](KAGGLE_SURT_MINI_PERSIAN_RUNBOOK_FA.md)
-برای سابقه و بازتولید حفظ می‌شود؛ مسیر جاری [runbook 1C](KAGGLE_SURT_STREAMING_RUNBOOK_FA.md) است.
+اجرای واقعی 1A، 1B و 1C و تأییدهای مربوط بررسی شده‌اند. [runbook 1B](KAGGLE_SURT_MINI_PERSIAN_RUNBOOK_FA.md)
+برای سابقه و بازتولید حفظ می‌شود؛ [runbook پذیرفته‌شدهٔ 1C-B](KAGGLE_SURT_STREAMING_1CB_RUNBOOK_FA.md) نیز مرجع بازتولید است. کار بعدی طبق پرامپت مرحلهٔ ۲، پس از دستور کاربر خواهد بود.
 برای 1C از پوشهٔ کامل run موفق بازیابی کنید؛ اجرای مجدد فاز صفر یا 1A لازم نیست.
 
 چهار نوت‌بوک باقی‌مانده ابزار داده/قرارداد native export هستند و هنوز recipe کامل adaptation فارسی نیستند. `train_asr.py --validate-only` آموزش انجام نمی‌دهد. adapter دادهٔ فعلی هم به‌تنهایی source-featureهای هم‌تراز مورد نیاز recipe را نمی‌سازد. هستهٔ audio، mixture، manifest، معیار و state حفظ شده است؛ مدل قبلی و router حذف شده‌اند. VAD/OSD موجود ابزار تشخیصی عمومی‌اند و ورودی اجباری مسیر SURT نیستند.
 
 ## پرامپت‌ها و آرشیو
 
-- [runbook جاری: 1C و بازیابی session](KAGGLE_SURT_STREAMING_RUNBOOK_FA.md)
+- [بازتولید 1C-B پذیرفته‌شده و بازیابی session](KAGGLE_SURT_STREAMING_1CB_RUNBOOK_FA.md)
 - [پرامپت تاریخی baseline ۱A](prompts/PERSIAN_SURT_NEXT_STEP.md)
 - [پرامپت‌های ادامه پس از عبور از gate](prompts/PERSIAN_SURT_FOLLOWUPS.md)
 - [آرشیو یک‌فایلی لاگ‌ها و قواعد Git](KAGGLE_SURT_ARTIFACTS_FA.md)
