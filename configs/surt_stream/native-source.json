@@ -1,0 +1,14 @@
+{
+  "evidence_run": "stream-20261119-b",
+  "icefall_revision": "f8c8578c9dbfa1183cc949b89b5d21bd33aa2ce1",
+  "source_hashes": {
+    "egs/libricss/SURT/dprnn_zipformer/dprnn.py": "476c184e797edf66cb965051614e519f3517f7a997c3f43c33cd44fdf5803d7f",
+    "egs/libricss/SURT/dprnn_zipformer/scaling.py": "56357ba2b7703f52093d5869cdf1574270fdbfa416123bc78695a08b4ea44145",
+    "egs/librispeech/ASR/pruned_transducer_stateless7_streaming/zipformer.py": "6538d99afea900f6a957d26a1032e27139b01b3745487a84f514a48bfdd981e3",
+    "egs/libricss/SURT/dprnn_zipformer/train.py": "e3c5f6b4d453ec6ed31a69ee140a8187501d0a9fe87fb2d9871de410ade59b5d",
+    "egs/librispeech/ASR/pruned_transducer_stateless7/decoder.py": "40632fb0a0c42e2e61eb8a5b81801f96b56650706f4740dbcf09ddfb0f4f3146",
+    "egs/librispeech/ASR/pruned_transducer_stateless7/joiner.py": "f8470d5c86804a3c3cf49f87e2c39a336da218fcf30d19be65203700bbcbf9d0",
+    "egs/libricss/SURT/dprnn_zipformer/model.py": "f16830b5c687f6f55c755358f6011db9a1698535994e0fdffa3d4bc00f86c40f",
+    "egs/libricss/SURT/dprnn_zipformer/beam_search.py": "d7765b98d65d10c60dd884a09ab9cf94cbed0c9b1558ee67d8ed8123d2d63d8d"
+  }
+}

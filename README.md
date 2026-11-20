@@ -12,7 +12,8 @@ one update, strict reload and the user's auditory confirmation. Its mini
 validation/test PI-WER is 100%; useful Persian recognition is not established.
 **Native incremental streaming remains an open stage 1C gate.**
 
-- [Current runbook: stage 1C components/resources and session restoration](docs/KAGGLE_SURT_STREAMING_RUNBOOK_FA.md)
+- [Current runbook: stage 1C-B native streaming and session restoration](docs/KAGGLE_SURT_STREAMING_1CB_RUNBOOK_FA.md)
+- [State, context and EOF contract for 1C-B](docs/SURT_1CB_STATE_CONTRACT.md)
 - [Reviewed stage 1B evidence and limitations](docs/experiments/surt_mini_1b_review_2026-11-19.md)
 - [Later gated prompts: mini Persian → data → adaptation → evaluation](docs/prompts/PERSIAN_SURT_FOLLOWUPS.md)
 - [Download all logs as one archive; what belongs in Git](docs/KAGGLE_SURT_ARTIFACTS_FA.md)
@@ -33,6 +34,15 @@ their own implementation and validation.
 The old single-stream comparison model, baseline notebook and heuristic-router
 artifacts have been removed. Generic VAD/OSD diagnostics are retained outside
 the SURT recognition path. Shared device selection lives in `utils/device.py`.
+
+### Hardware Constraints & Optimization
+
+- **Execution Target:** The environment is limited to 2x Tesla T4 GPUs on Kaggle.
+- **Strict Compliance:** Do not attempt to utilize multi-GPU configs designed for V100/A100 clusters (e.g., high batch sizes or large context windows).
+- **Mandatory Optimizations:**
+    1. Use `GradientAccumulation` to simulate large batch sizes.
+    2. Enforce `FP16` mixed-precision to stay within the 16GB VRAM limit per card.
+    3. If `CUDA Out of Memory` occurs, prioritize `segment_length` reduction before batch size reduction.
 
 ## Existing diagnostic notebooks
 

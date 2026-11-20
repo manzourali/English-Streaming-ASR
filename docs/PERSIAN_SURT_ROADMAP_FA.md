@@ -4,6 +4,11 @@
 
 ## وضعیت کنونی
 
+به‌روزرسانی ۲۰۲۶-۱۱-۲۰: سورس و شواهد 1C-A بررسی و adapterهای 1C-B محلی آماده شده‌اند؛
+اجرای 1C-B هنوز انجام نشده و gate باز است. مسیر اجرای فعلی:
+[runbook مستقل 1C-B](KAGGLE_SURT_STREAMING_1CB_RUNBOOK_FA.md) و
+[قرارداد state/context/EOF](SURT_1CB_STATE_CONTRACT.md).
+
 به‌روزرسانی ۲۰۲۶-۱۱-۱۹: **گام‌های 1A و 1B از نظر فنی پذیرفته شده‌اند؛ gate استریم 1C باز است.**
 run واقعی `mini-20261119-d` یک update، gradient/delta، reload strict و decode دوشاخه‌ای
 را ثبت کرده و کاربر تطبیق هشت clean و چهار مخلوط کامل را تأیید کرده است.

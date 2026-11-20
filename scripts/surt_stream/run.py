@@ -26,7 +26,7 @@ def timed(torch, action):
     return result, time.perf_counter() - begin
 
 
-def audit_model(model, run):
+def audit_model(model, run, native_adapter=None):
     source_dir = run / 'upstream-source'
     source_dir.mkdir(exist_ok=False)
     modules, files = {}, {}
@@ -88,6 +88,9 @@ def audit_model(model, run):
                                      'Compose with validated frontend and persistent decoder',
                                      'Measure short/long end-to-end reset/EOF/context/latency parity'],
                   engineering_effort='Not quantified before source/API review; no schedule promise')
+    if native_adapter is not None:
+        report['native_adapter'] = native_adapter
+        report['acceptance_review_requirements'] = report.pop('blockers')
     dump(run / 'api-audit.json', report)
     return report
 

@@ -7,7 +7,7 @@ The project's only ASR model is SURT 2.0. The objective is Persian language adap
 - Roadmap and acceptance criteria: `docs/PERSIAN_SURT_ROADMAP_FA.md`.
 - Stage prompts: `docs/prompts/PERSIAN_SURT_FOLLOWUPS.md`.
 - Stage 1A is accepted. Stage 1B's real Kaggle run `mini-20261119-d` completed a genuine update and strict reload; the user confirmed all eight clean recordings and four complete mixtures on November 19, 2026. This is a pipeline feasibility result, not successful Persian recognition: mini validation/test PI-WER is 100%, and the tiny tokenizer has held-out coverage gaps.
-- Current work is stage 1C. Use `docs/KAGGLE_SURT_STREAMING_RUNBOOK_FA.md`. Native end-to-end streaming remains unproven until actual stateful inference passes the stated acceptance tests. API inventory, component tests and whole-utterance timings cannot close that gate.
+- Current work is stage 1C. 1C-A component evidence is saved under `outputs/surt-stream-1c/`; the current 1C-B implementation/runbook is `docs/KAGGLE_SURT_STREAMING_1CB_RUNBOOK_FA.md` with state contracts in `docs/SURT_1CB_STATE_CONTRACT.md`. The earlier `docs/KAGGLE_SURT_STREAMING_RUNBOOK_FA.md` remains the historical 1C-A runbook. Native end-to-end streaming remains unproven until actual stateful inference passes the stated acceptance tests. API inventory, component tests and whole-utterance timings cannot close that gate.
 - Do not start corpus-scale downloads, FastMSS production or full adaptation before the applicable feasibility evidence has been reviewed.
 
 ## Where work runs

@@ -120,6 +120,10 @@ def archive(run):
                     if path.is_file() and '__pycache__' not in path.parts]
     source_files += [ROOT / name for name in ('master_prompt.md',
                      'docs/KAGGLE_SURT_STREAMING_RUNBOOK_FA.md',
+                     'docs/KAGGLE_SURT_STREAMING_1CB_RUNBOOK_FA.md',
+                     'docs/SURT_1CB_STATE_CONTRACT.md',
+                     'tests/test_surt_stream_native.py',
+                     'tests/test_surt_stream_kaldifeat.py',
                      'docs/experiments/surt_mini_1b_review_2026-11-19.md')]
     if sum(path.stat().st_size for path in files + source_files) > PINS['max_evidence_bytes']:
         raise RuntimeError('Evidence exceeds 20MiB; preserve all files and review the size')
@@ -131,7 +135,8 @@ def archive(run):
     items = [(path, 'run/' + str(path.relative_to(run))) for path in sorted(files)]
     items += [(path, 'project/' + str(path.relative_to(ROOT))) for path in sorted(source_files)]
     metadata = dict(hashes={name: digest(path) for path, name in items},
-                    native_streaming_gate='open; native adapter not implemented or validated',
+                    native_streaming_gate=(read(run / 'result.json').get('gate_1c', 'OPEN')
+                                           if (run / 'result.json').exists() else 'OPEN'),
                     result_exists=(run / 'result.json').exists())
     with target.open('xb') as stream, tarfile.open(fileobj=stream, mode='w:gz') as bundle:
         for path, name in items:
